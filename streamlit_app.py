@@ -48,22 +48,17 @@ section[data-testid="stSidebar"] {
   color: #111827;
 }
 
-/* كارت الـ file uploader في Light */
+/* كارت رفع الملفات في Light */
 [data-testid="stFileUploaderDropzone"] {
-  background-color: #FFFFFF;
-  border-radius: 16px;
-  border: 1px dashed #CBD5E1;
-  color: #111827;
+  background-color: #FFFFFF !important;
+  border-radius: 16px !important;
+  border: 1px dashed #CBD5E1 !important;
+  color: #111827 !important;
 }
 
+/* النصوص داخل كارت الرفع */
 [data-testid="stFileUploaderDropzone"] * {
-  color: #F9FAFB;
-}
-
-/* نخلي النص داخل تعليمات الرفع غامق */
-[data-testid="stFileUploaderDropzone"] span,
-[data-testid="stFileUploaderDropzone"] label {
-  color: #F9FAFB;
+  color: #111827 !important;
 }
 
 /* Main card */
@@ -146,10 +141,10 @@ div[data-testid="stChatInput"] textarea:focus {
 
 /* أزرار السايدبار في Light → بيضاء هلامية */
 section[data-testid="stSidebar"] button {
-  color: #111827;
-  background-color: #FFFFFF;
-  border-radius: 999px;
-  border: 1px solid #E5E7EB;
+  color: #111827 !important;
+  background-color: #FFFFFF !important;
+  border-radius: 999px !important;
+  border: 1px solid #E5E7EB !important;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
   box-shadow: 0 10px 24px rgba(148,163,184,0.35);
@@ -158,19 +153,19 @@ section[data-testid="stSidebar"] button {
 
 /* Hover في Light */
 section[data-testid="stSidebar"] button:not(:disabled):hover {
-  background-color: #EEF2FF;
-  border-color: #4F46E5;
-  color: #111827;
+  background-color: #EEF2FF !important;
+  border-color: #4F46E5 !important;
+  color: #111827 !important;
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(148,163,184,0.55);
 }
 
 /* Disabled في Light */
 section[data-testid="stSidebar"] button:disabled {
-  background-color: #F3F4F6;
-  color: #9CA3AF;
-  border: 1px solid #E5E7EB;
-  box-shadow: none;
+  background-color: #F3F4F6 !important;
+  color: #9CA3AF !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
 }
 
 /* Badges للمصادر */
@@ -239,15 +234,15 @@ section[data-testid="stSidebar"] > div {
 
 /* uploader dark */
 [data-testid="stFileUploaderDropzone"] {
-  background-color: #020617;
-  border-radius: 16px;
-  border: 1px dashed #4B5563;
-  color: #E5E7EB;
+  background-color: #020617 !important;
+  border-radius: 16px !important;
+  border: 1px dashed #4B5563 !important;
+  color: #E5E7EB !important;
 }
 
 [data-testid="stFileUploaderDropzone"] span,
 [data-testid="stFileUploaderDropzone"] label {
-  color: #E5E7EB;
+  color: #E5E7EB !important;
 }
 
 /* Main card (dark glass) */
@@ -333,10 +328,10 @@ div[data-testid="stChatInput"] textarea:focus {
 
 /* Sidebar buttons (dark) */
 section[data-testid="stSidebar"] button {
-  color: #F9FAFB;
-  background-color: #111827;
-  border-radius: 999px;
-  border: 0;
+  color: #F9FAFB !important;
+  background-color: #111827 !important;
+  border-radius: 999px !important;
+  border: 0 !important;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
   box-shadow: 0 12px 30px rgba(0,0,0,0.9);
@@ -350,10 +345,10 @@ section[data-testid="stSidebar"] button:not(:disabled):hover {
 
 /* Disabled */
 section[data-testid="stSidebar"] button:disabled {
-  background-color: #111827;
-  color: #9CA3AF;
-  border: 1px solid #4B5563;
-  box-shadow: none;
+  background-color: #111827 !important;
+  color: #9CA3AF !important;
+  border: 1px solid #4B5563 !important;
+  box-shadow: none !important;
 }
 
 /* Source badges */
@@ -392,21 +387,18 @@ div.stAlert {
 # =====================  THEME TOGGLE  ===================== #
 
 if "ui_theme" not in st.session_state:
-    st.session_state.ui_theme = "light"
+  st.session_state.ui_theme = "light"
 
-# أول جزء من السايدبار: Appearance + toggle
 with st.sidebar:
-    st.markdown("### Appearance")
-    dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"))
+  st.markdown("### Appearance")
+  dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"))
 
-# حدّث القيمة
 st.session_state.ui_theme = "dark" if dark_mode else "light"
 
-# طبّق الـ CSS بعد ما نعرف القيمة
 if st.session_state.ui_theme == "dark":
-    st.markdown(DARK_CSS, unsafe_allow_html=True)
+  st.markdown(DARK_CSS, unsafe_allow_html=True)
 else:
-    st.markdown(LIGHT_CSS, unsafe_allow_html=True)
+  st.markdown(LIGHT_CSS, unsafe_allow_html=True)
 
 # =====================  HEADER  ===================== #
 
@@ -424,74 +416,74 @@ st.markdown(
 # =====================  SESSION STATE  ===================== #
 
 if "rag" not in st.session_state:
-    st.session_state.rag: RAGEngine = RAGEngine()
-    st.session_state.index_built = False
-    st.session_state.chat_history: List[dict] = []
-    st.session_state.last_files = []
+  st.session_state.rag: RAGEngine = RAGEngine()
+  st.session_state.index_built = False
+  st.session_state.chat_history: List[dict] = []
+  st.session_state.last_files = []
 
 rag: RAGEngine = st.session_state.rag
 
 # =====================  SIDEBAR: UPLOAD & CONTROLS  ===================== #
 
 with st.sidebar:
-    st.markdown("#### Upload documents")
-    uploaded_files = st.file_uploader(
-        "PDF / TXT",
-        type=["pdf", "txt"],
-        accept_multiple_files=True,
-        label_visibility="collapsed",
-    )
+  st.markdown("#### Upload documents")
+  uploaded_files = st.file_uploader(
+      "PDF / TXT",
+      type=["pdf", "txt"],
+      accept_multiple_files=True,
+      label_visibility="collapsed",
+  )
 
-    st.caption("Max 200MB per file · All processing stays on your side.")
+  st.caption("Max 200MB per file · All processing stays on your side.")
 
-    if st.button("Load sample document", use_container_width=True):
-        sample_path = "sample.txt"
-        if not os.path.exists(sample_path):
-            with open(sample_path, "w", encoding="utf-8") as f:
-                f.write(
-                    "Sample RAG document. This chatbot can answer questions "
-                    "based on the text you upload. Add your documentation, "
-                    "reports, or manuals here and ask anything about them."
-                )
-        st.success("Sample document created. Click 'Index documents' to use it.")
+  if st.button("Load sample document", use_container_width=True):
+      sample_path = "sample.txt"
+      if not os.path.exists(sample_path):
+          with open(sample_path, "w", encoding="utf-8") as f:
+              f.write(
+                  "Sample RAG document. This chatbot can answer questions "
+                  "based on the text you upload. Add your documentation, "
+                  "reports, or manuals here and ask anything about them."
+              )
+      st.success("Sample document created. Click 'Index documents' to use it.")
 
-    file_paths = []
-    if uploaded_files:
-        for uf in uploaded_files:
-            save_path = os.path.join("uploaded_" + uf.name)
-            with open(save_path, "wb") as f:
-                f.write(uf.getbuffer())
-            file_paths.append(save_path)
+  file_paths = []
+  if uploaded_files:
+      for uf in uploaded_files:
+          save_path = os.path.join("uploaded_" + uf.name)
+          with open(save_path, "wb") as f:
+              f.write(uf.getbuffer())
+          file_paths.append(save_path)
 
-    st.markdown("---")
+  st.markdown("---")
 
-    if st.button("Index documents", use_container_width=True):
-        if not file_paths and not os.path.exists("sample.txt"):
-            st.error("Please upload at least one document or load the sample.")
-        else:
-            if not file_paths and os.path.exists("sample.txt"):
-                file_paths = ["sample.txt"]
+  if st.button("Index documents", use_container_width=True):
+      if not file_paths and not os.path.exists("sample.txt"):
+          st.error("Please upload at least one document or load the sample.")
+      else:
+          if not file_paths and os.path.exists("sample.txt"):
+              file_paths = ["sample.txt"]
 
-            with st.spinner("Indexing documents with embeddings & FAISS..."):
-                try:
-                    num_files, num_chunks = rag.build_index(file_paths)
-                    st.session_state.index_built = True
-                    st.session_state.last_files = file_paths
-                    st.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
-                except Exception as e:
-                    st.session_state.index_built = False
-                    st.error(f"Error while indexing: {e}")
+          with st.spinner("Indexing documents with embeddings & FAISS..."):
+              try:
+                  num_files, num_chunks = rag.build_index(file_paths)
+                  st.session_state.index_built = True
+                  st.session_state.last_files = file_paths
+                  st.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
+              except Exception as e:
+                  st.session_state.index_built = False
+                  st.error(f"Error while indexing: {e}")
 
-    if st.button("Clear chat history", use_container_width=True):
-        st.session_state.chat_history = []
-        st.experimental_rerun()
+  if st.button("Clear chat history", use_container_width=True):
+      st.session_state.chat_history = []
+      st.experimental_rerun()
 
-    st.markdown("---")
-    st.markdown("#### LLM status")
-    if rag.llm_client is None:
-        st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
-    else:
-        st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
+  st.markdown("---")
+  st.markdown("#### LLM status")
+  if rag.llm_client is None:
+      st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
+  else:
+      st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
 
 # =====================  MAIN LAYOUT  ===================== #
 
@@ -522,59 +514,59 @@ left_col, right_col = st.columns([2.2, 1], gap="large")
 # ---------- Chat ----------
 
 with left_col:
-    st.subheader("CHAT · CONSOLE")
+  st.subheader("CHAT · CONSOLE")
 
-    if not st.session_state.index_built:
-        st.info("Please upload and index documents first from the sidebar.")
-    else:
-        for msg in st.session_state.chat_history:
-            with st.chat_message(
-                msg["role"],
-                avatar="ＡＩ" if msg["role"] == "assistant" else "ＵＳＲ",
-            ):
-                st.markdown(msg["content"])
+  if not st.session_state.index_built:
+      st.info("Please upload and index documents first from the sidebar.")
+  else:
+      for msg in st.session_state.chat_history:
+          with st.chat_message(
+              msg["role"],
+              avatar="ＡＩ" if msg["role"] == "assistant" else "ＵＳＲ",
+          ):
+              st.markdown(msg["content"])
 
-        user_input = st.chat_input("Ask a question about your documents...")
+      user_input = st.chat_input("Ask a question about your documents...")
 
-        if user_input:
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
+      if user_input:
+          st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-            with st.chat_message("user", avatar="ＵＳＲ"):
-                st.markdown(user_input)
+          with st.chat_message("user", avatar="ＵＳＲ"):
+              st.markdown(user_input)
 
-            with st.chat_message("assistant", avatar="ＡＩ"):
-                with st.spinner("Retrieving relevant chunks and generating answer..."):
-                    answer, retrieved = rag.answer(user_input)
+          with st.chat_message("assistant", avatar="ＡＩ"):
+              with st.spinner("Retrieving relevant chunks and generating answer..."):
+                  answer, retrieved = rag.answer(user_input)
 
-                st.markdown(answer)
+              st.markdown(answer)
 
-                if retrieved:
-                    st.markdown("")
-                    st.markdown("**Sources**")
-                    for i, ch in enumerate(retrieved, start=1):
-                        st.markdown(
-                            f"<span class='source-badge'>[{i}] {ch.source}</span>",
-                            unsafe_allow_html=True,
-                        )
+              if retrieved:
+                  st.markdown("")
+                  st.markdown("**Sources**")
+                  for i, ch in enumerate(retrieved, start=1):
+                      st.markdown(
+                          f"<span class='source-badge'>[{i}] {ch.source}</span>",
+                          unsafe_allow_html=True,
+                      )
 
-            st.experimental_rerun()
+          st.experimental_rerun()
 
 # ---------- Info ----------
 
 with right_col:
-    st.subheader("SESSION · STATUS")
+  st.subheader("SESSION · STATUS")
 
-    if st.session_state.index_built and st.session_state.last_files:
-        st.markdown(f"- **Files indexed:** {len(st.session_state.last_files)}")
-        st.markdown("- **Vector index:** FAISS (L2 distance)")
-    else:
-        st.markdown("- **Files indexed:** 0")
-        st.markdown("- **Vector index:** not built yet")
+  if st.session_state.index_built and st.session_state.last_files:
+      st.markdown(f"- **Files indexed:** {len(st.session_state.last_files)}")
+      st.markdown("- **Vector index:** FAISS (L2 distance)")
+  else:
+      st.markdown("- **Files indexed:** 0")
+      st.markdown("- **Vector index:** not built yet")
 
-    st.markdown("---")
-    st.subheader("FLOW · PIPELINE")
-    st.markdown(
-        """
+  st.markdown("---")
+  st.subheader("FLOW · PIPELINE")
+  st.markdown(
+      """
 <ul class="custom-list">
 <li>Upload one or more PDF/TXT files from the sidebar.</li>
 <li>Click <b>Index documents</b> to build the vector index with embeddings.</li>
@@ -582,20 +574,20 @@ with right_col:
 <li>The engine retrieves the most relevant chunks and (optionally) calls OpenAI to answer.</li>
 </ul>
 """,
-        unsafe_allow_html=True,
-    )
+      unsafe_allow_html=True,
+  )
 
-    st.markdown("---")
-    st.subheader("USAGE · NOTES")
-    st.markdown(
-        """
+  st.markdown("---")
+  st.subheader("USAGE · NOTES")
+  st.markdown(
+      """
 <ul class="custom-list">
 <li>Use clear questions like <i>“Summarize chapter 2”</i> أو <i>“What are the key points about feature X?”</i>.</li>
 <li>Upload multiple files لبناء base معرفة أعمق.</li>
 <li>في الإنتاج، يمكن توصيل هذه الواجهة بوثائق الشركة أو وثائق العملاء كـ branded assistant.</li>
 </ul>
 """,
-        unsafe_allow_html=True,
-    )
+      unsafe_allow_html=True,
+  )
 
 st.markdown("</div>", unsafe_allow_html=True)
