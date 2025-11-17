@@ -395,7 +395,6 @@ with left_col:
     if not st.session_state.index_built:
         st.info("Please upload and index documents first from the sidebar.")
     else:
-        # عرض المحادثة السابقة
         for msg in st.session_state.chat_history:
             with st.chat_message(
                 msg["role"],
@@ -403,7 +402,6 @@ with left_col:
             ):
                 st.markdown(msg["content"])
 
-        # إدخال سؤال جديد
         user_input = st.chat_input("Ask a question about your documents...")
 
         if user_input:
