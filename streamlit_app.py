@@ -6,7 +6,9 @@ import streamlit as st
 from rag_engine import RAGEngine
 
 
-# ---------- Theme CSS (light + dark) ----------
+st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
+
+# =====================  THEME CSS  ===================== #
 
 LIGHT_CSS = """
 <style>
@@ -41,9 +43,27 @@ section[data-testid="stSidebar"] > div {
   box-shadow: 0 14px 32px rgba(15,23,42,0.12);
 }
 
-/* كل النصوص داخل السايدبار (ومنها Dark mode) تكون غامقة وواضحة */
+/* نصوص السايدبار (ومنها Dark mode label) */
 section[data-testid="stSidebar"] {
   color: #111827;
+}
+
+/* كارت الـ file uploader في Light */
+[data-testid="stFileUploaderDropzone"] {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  border: 1px dashed #CBD5E1;
+  color: #111827;
+}
+
+[data-testid="stFileUploaderDropzone"] * {
+  color: #F9FAFB;
+}
+
+/* نخلي النص داخل تعليمات الرفع غامق */
+[data-testid="stFileUploaderDropzone"] span,
+[data-testid="stFileUploaderDropzone"] label {
+  color: #F9FAFB;
 }
 
 /* Main card */
@@ -126,8 +146,8 @@ div[data-testid="stChatInput"] textarea:focus {
 
 /* أزرار السايدبار في Light → بيضاء هلامية */
 section[data-testid="stSidebar"] button {
-  color: #111827;                    /* النص غامق */
-  background-color: #FFFFFF;         /* زر أبيض */
+  color: #111827;
+  background-color: #FFFFFF;
   border-radius: 999px;
   border: 1px solid #E5E7EB;
   padding: 0.45rem 0.2rem;
@@ -186,7 +206,6 @@ div.stAlert {
 </style>
 """
 
-
 DARK_CSS = """
 <style>
 
@@ -216,6 +235,19 @@ section[data-testid="stSidebar"] > div {
   padding: 1rem 0.9rem 1.1rem 0.9rem;
   border: 1px solid rgba(51,65,85,0.9);
   box-shadow: 0 18px 45px rgba(0,0,0,0.7);
+}
+
+/* uploader dark */
+[data-testid="stFileUploaderDropzone"] {
+  background-color: #020617;
+  border-radius: 16px;
+  border: 1px dashed #4B5563;
+  color: #E5E7EB;
+}
+
+[data-testid="stFileUploaderDropzone"] span,
+[data-testid="stFileUploaderDropzone"] label {
+  color: #E5E7EB;
 }
 
 /* Main card (dark glass) */
@@ -303,7 +335,7 @@ div[data-testid="stChatInput"] textarea:focus {
 section[data-testid="stSidebar"] button {
   color: #F9FAFB;
   background-color: #111827;
-  border-radius: 10px;
+  border-radius: 999px;
   border: 0;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
@@ -357,25 +389,26 @@ div.stAlert {
 </style>
 """
 
-
-# ---------- Theme toggle in sidebar ----------
+# =====================  THEME TOGGLE  ===================== #
 
 if "ui_theme" not in st.session_state:
     st.session_state.ui_theme = "light"
 
+# أول جزء من السايدبار: Appearance + toggle
 with st.sidebar:
-    st.write("### Appearance")
+    st.markdown("### Appearance")
     dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"))
 
+# حدّث القيمة
 st.session_state.ui_theme = "dark" if dark_mode else "light"
 
+# طبّق الـ CSS بعد ما نعرف القيمة
 if st.session_state.ui_theme == "dark":
     st.markdown(DARK_CSS, unsafe_allow_html=True)
 else:
     st.markdown(LIGHT_CSS, unsafe_allow_html=True)
 
-
-# ---------- Header / Hero ----------
+# =====================  HEADER  ===================== #
 
 st.markdown(
     """
@@ -388,8 +421,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# ---------- Session state ----------
+# =====================  SESSION STATE  ===================== #
 
 if "rag" not in st.session_state:
     st.session_state.rag: RAGEngine = RAGEngine()
@@ -399,8 +431,7 @@ if "rag" not in st.session_state:
 
 rag: RAGEngine = st.session_state.rag
 
-
-# ---------- Sidebar: Upload + Index + Controls ----------
+# =====================  SIDEBAR: UPLOAD & CONTROLS  ===================== #
 
 with st.sidebar:
     st.markdown("#### Upload documents")
@@ -462,8 +493,7 @@ with st.sidebar:
     else:
         st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
 
-
-# ---------- Main card with ribbon ----------
+# =====================  MAIN LAYOUT  ===================== #
 
 st.markdown("<div class='glass-shell'>", unsafe_allow_html=True)
 
@@ -489,8 +519,7 @@ st.markdown(
 
 left_col, right_col = st.columns([2.2, 1], gap="large")
 
-
-# ---------- Left column: Chat ----------
+# ---------- Chat ----------
 
 with left_col:
     st.subheader("CHAT · CONSOLE")
@@ -530,8 +559,7 @@ with left_col:
 
             st.experimental_rerun()
 
-
-# ---------- Right column: Info ----------
+# ---------- Info ----------
 
 with right_col:
     st.subheader("SESSION · STATUS")
@@ -571,5 +599,3 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-
