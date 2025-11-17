@@ -31,14 +31,35 @@ html, body, [data-testid="stAppViewContainer"] {
   background: transparent;
 }
 
-section[data-testid="stSidebar"] > div {
-  background: #FFFFFF;
-  border-radius: 16px;
-  margin: 0.9rem 0.4rem 0.9rem 0.2rem;
-  padding: 1rem 0.9rem 1.1rem 0.9rem;
-  border: 1px solid rgba(209,213,219,0.9);
-  box-shadow: 0 10px 30px rgba(15,23,42,0.08);
+/* Sidebar buttons (light) */
+section[data-testid="stSidebar"] button {
+  color: #111827;                     /* نص غامق وواضح */
+  background-color: #E5E7EB;          /* رمادي فاتح */
+  border-radius: 10px;
+  border: 1px solid #CBD5E1;          /* حافة خفيفة */
+  padding: 0.45rem 0.2rem;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(15,23,42,0.18);
+  transition: all 0.12s ease-out;
 }
+
+/* Hover في light */
+section[data-testid="stSidebar"] button:not(:disabled):hover {
+  background-color: #EEF2FF;
+  border-color: #4F46E5;
+  color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15,23,42,0.25);
+}
+
+/* Disabled state في light */
+section[data-testid="stSidebar"] button:disabled {
+  background-color: #E5E7EB;
+  color: #9CA3AF;
+  border: 1px solid #CBD5E1;
+  box-shadow: none;
+}
+
 
 /* Main card */
 .glass-shell {
@@ -560,3 +581,4 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
+
