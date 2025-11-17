@@ -126,11 +126,11 @@ button[kind="primary"] svg {
   color: #F9FAFB !important;
 }
 
-/* أزرار السايدبار → مستطيلة داكنة */
-section[data-testid="stSidebar"] button[kind="primary"] {
+/* أزرار السايدبار (العادية + الـ disabled) */
+section[data-testid="stSidebar"] button {
+  color: #F9FAFB !important;               /* نص أبيض واضح */
+  background-color: #111827 !important;    /* خلفية داكنة ثابتة */
   border-radius: 10px;
-  background: #111827;
-  color: #F9FAFB;
   border: 0;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
@@ -138,9 +138,18 @@ section[data-testid="stSidebar"] button[kind="primary"] {
   transition: all 0.12s ease-out;
 }
 
-section[data-testid="stSidebar"] button[kind="primary"]:hover {
+/* Hover */
+section[data-testid="stSidebar"] button:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 26px rgba(15,23,42,0.65);
+}
+
+/* Disabled state */
+section[data-testid="stSidebar"] button:disabled {
+  background-color: #1F2933 !important;
+  color: #9CA3AF !important;
+  border: 1px solid #4B5563 !important;
+  box-shadow: none !important;
 }
 
 /* Badges للمصادر */
@@ -163,6 +172,14 @@ ul.custom-list {
 
 ul.custom-list li {
   margin-bottom: 0.22rem;
+}
+
+/* تحسين شكل رسائل info */
+div.stAlert {
+  background-color: #E5ECFF !important;
+  color: #111827 !important;
+  border-radius: 12px !important;
+  border: 1px solid #C7D2FE !important;
 }
 
 </style>
