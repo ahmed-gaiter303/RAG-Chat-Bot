@@ -5,11 +5,15 @@ import streamlit as st
 
 from rag_engine import RAGEngine
 
+
+# ---------- Page config ----------
+
 st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
 
-# =====================  THEME CSS  ===================== #
 
-LIGHT_CSS = """
+# ---------- Global light UI CSS (no dark mode) ----------
+
+APP_CSS = """
 <style>
 
 /* خلفية فاتحة هلامية */
@@ -28,7 +32,7 @@ html, body, [data-testid="stAppViewContainer"] {
   max-width: 1120px;
 }
 
-/* Sidebar Light */
+/* Sidebar */
 [data-testid="stSidebar"] {
   background: transparent;
 }
@@ -42,17 +46,11 @@ section[data-testid="stSidebar"] > div {
   box-shadow: 0 14px 32px rgba(15,23,42,0.12);
 }
 
-/* نصوص السايدبار (منها Dark mode) */
 section[data-testid="stSidebar"] {
   color: #111827;
 }
 
-section[data-testid="stSidebar"] label {
-  color: #111827 !important;
-  font-weight: 500;
-}
-
-/* كارت رفع الملفات في Light */
+/* كارت رفع الملفات */
 [data-testid="stFileUploaderDropzone"] {
   background-color: #FFFFFF !important;
   border-radius: 16px !important;
@@ -64,7 +62,7 @@ section[data-testid="stSidebar"] label {
   color: #111827 !important;
 }
 
-/* Main card */
+/* Main glass card */
 .glass-shell {
   background: #FFFFFF;
   border-radius: 20px;
@@ -142,7 +140,7 @@ div[data-testid="stChatInput"] textarea:focus {
   box-shadow: 0 0 0 1px rgba(79,70,229,0.85), 0 16px 36px rgba(79,70,229,0.25);
 }
 
-/* أزرار السايدبار في Light → بيضاء هلامية */
+/* أزرار السايدبار */
 section[data-testid="stSidebar"] button {
   color: #111827 !important;
   background-color: #FFFFFF !important;
@@ -202,206 +200,25 @@ div.stAlert {
 </style>
 """
 
-DARK_CSS = """
-<style>
+st.markdown(APP_CSS, unsafe_allow_html=True)
 
-html, body, [data-testid="stAppViewContainer"] {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.25), transparent 55%),
-    radial-gradient(circle at 100% 100%, rgba(236,72,153,0.22), transparent 55%),
-    #020617;
-  color: #E5E7EB;
-}
 
-.main .block-container {
-  padding-top: 1.4rem;
-  padding-bottom: 1.5rem;
-  max-width: 1120px;
-}
+# ---------- Session state ----------
 
-/* Sidebar (dark) */
-[data-testid="stSidebar"] {
-  background: transparent;
-}
+if "rag" not in st.session_state:
+    st.session_state.rag: RAGEngine = RAGEngine()
+    st.session_state.index_built = False
+    st.session_state.chat_history: List[dict] = []
+    st.session_state.last_files = []
+    st.session_state.chunks_count = 0
+    st.session_state.questions_count = 0
 
-section[data-testid="stSidebar"] > div {
-  background: #020617;
-  border-radius: 16px;
-  margin: 0.9rem 0.4rem 0.9rem 0.2rem;
-  padding: 1rem 0.9rem 1.1rem 0.9rem;
-  border: 1px solid rgba(51,65,85,0.9);
-  box-shadow: 0 18px 45px rgba(0,0,0,0.7);
-}
+rag: RAGEngine = st.session_state.rag
 
-/* label في السايدبار في وضع Dark (Dark mode) */
-section[data-testid="stSidebar"] label {
-  color: #E5E7EB !important;
-  font-weight: 500;
-}
 
-/* uploader dark */
-[data-testid="stFileUploaderDropzone"] {
-  background-color: #020617 !important;
-  border-radius: 16px !important;
-  border: 1px dashed #4B5563 !important;
-  color: #E5E7EB !important;
-}
-
-[data-testid="stFileUploaderDropzone"] span,
-[data-testid="stFileUploaderDropzone"] label {
-  color: #E5E7EB !important;
-}
-
-/* Main card (dark glass) */
-.glass-shell {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(79,70,229,0.35), transparent 55%),
-    radial-gradient(circle at 100% 100%, rgba(236,72,153,0.30), transparent 55%),
-    #020617EE;
-  border-radius: 20px;
-  padding: 1.3rem 1.5rem 1.5rem 1.5rem;
-  border: 1px solid rgba(55,65,81,0.95);
-  box-shadow:
-    0 24px 60px rgba(0,0,0,0.9);
-  backdrop-filter: blur(20px) saturate(160%);
-}
-
-/* Ribbon */
-.ribbon-bar {
-  background: linear-gradient(90deg, #6366f1, #ec4899);
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  display: inline-flex;
-  gap: 0.45rem;
-  align-items: center;
-  color: #F9FAFB;
-  font-size: 0.80rem;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.8);
-}
-
-.ribbon-chip {
-  background: rgba(15,23,42,0.5);
-  padding: 0.13rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(248,250,252,0.25);
-}
-
-/* Text */
-h1 {
-  font-size: 2.2rem;
-  letter-spacing: 0.04em;
-  color: #F9FAFB;
-}
-
-h2, h3 {
-  color: #E5E7EB;
-}
-
-/* Chat bubbles */
-div[data-testid="stChatMessage"][data-testid*="user"] {
-  background: #F9FAFB;
-  color: #020617;
-  border-radius: 14px;
-  border: none;
-}
-
-div[data-testid="stChatMessage"][data-testid*="assistant"] {
-  background: #020617;
-  color: #E5E7EB;
-  border-radius: 14px;
-  border: 1px solid rgba(75,85,99,0.95);
-}
-
-/* Chat input */
-.stChatInputContainer {
-  background: transparent;
-  padding-top: 0.6rem;
-}
-
-div[data-testid="stChatInput"] textarea {
-  background: #020617;
-  border-radius: 12px;
-  border: 1px solid rgba(55,65,81,0.95);
-  padding: 0.75rem 0.9rem;
-  color: #E5E7EB;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.9);
-}
-
-div[data-testid="stChatInput"] textarea:focus {
-  outline: none;
-  border-color: #6366F1;
-  box-shadow: 0 0 0 1px rgba(129,140,248,0.95), 0 20px 48px rgba(0,0,0,1);
-}
-
-/* Sidebar buttons (dark) */
-section[data-testid="stSidebar"] button {
-  color: #F9FAFB !important;
-  background-color: #111827 !important;
-  border-radius: 999px !important;
-  border: 0 !important;
-  padding: 0.45rem 0.2rem;
-  font-weight: 600;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.9);
-  transition: all 0.12s ease-out;
-}
-
-section[data-testid="stSidebar"] button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 38px rgba(0,0,0,1);
-}
-
-/* Disabled */
-section[data-testid="stSidebar"] button:disabled {
-  background-color: #111827 !important;
-  color: #9CA3AF !important;
-  border: 1px solid #4B5563 !important;
-  box-shadow: none !important;
-}
-
-/* Source badges */
-.source-badge {
-    display: inline-block;
-    padding: 0.15rem 0.55rem;
-    border-radius: 6px;
-    background: #F9FAFB;
-    color: #020617;
-    font-size: 0.68rem;
-    margin-right: 0.25rem;
-    margin-top: 0.18rem;
-}
-
-/* Lists */
-ul.custom-list {
-  padding-left: 1.1rem;
-  color: #D1D5DB;
-}
-
-ul.custom-list li {
-  margin-bottom: 0.22rem;
-}
-
-/* Info alert */
-div.stAlert {
-  background-color: #020617;
-  color: #E5E7EB;
-  border-radius: 12px;
-  border: 1px solid #4B5563;
-}
-
-</style>
-"""
-
-# =====================  SESSION STATE للثيم  ===================== #
-
-if "ui_theme" not in st.session_state:
-    st.session_state.ui_theme = "light"
-
-# =====================  SIDEBAR: كل العناصر بما فيها التوجّل  ===================== #
+# ---------- Sidebar: upload & controls ----------
 
 with st.sidebar:
-    st.markdown("### Appearance")
-    dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"), key="theme_toggle")
-
     st.markdown("#### Upload documents")
     uploaded_files = st.file_uploader(
         "PDF / TXT",
@@ -423,26 +240,48 @@ with st.sidebar:
                 )
         st.success("Sample document created. Click 'Index documents' to use it.")
 
-    # مكان لتخزين المسارات (هيتملأ بعد ما نعرف الثيم ونطبّق الـ CSS)
-    st.session_state.sidebar_uploaded_files = uploaded_files
+    file_paths = []
+    if uploaded_files:
+        for uf in uploaded_files:
+            save_path = os.path.join("uploaded_" + uf.name)
+            with open(save_path, "wb") as f:
+                f.write(uf.getbuffer())
+            file_paths.append(save_path)
 
     st.markdown("---")
-    index_clicked = st.button("Index documents", use_container_width=True)
-    clear_clicked = st.button("Clear chat history", use_container_width=True)
+
+    if st.button("Index documents", use_container_width=True):
+        if not file_paths and not os.path.exists("sample.txt"):
+            st.error("Please upload at least one document or load the sample.")
+        else:
+            if not file_paths and os.path.exists("sample.txt"):
+                file_paths = ["sample.txt"]
+
+            with st.spinner("Indexing documents with embeddings & FAISS..."):
+                try:
+                    num_files, num_chunks = rag.build_index(file_paths)
+                    st.session_state.index_built = True
+                    st.session_state.last_files = file_paths
+                    st.session_state.chunks_count = num_chunks
+                    st.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
+                except Exception as e:
+                    st.session_state.index_built = False
+                    st.error(f"Error while indexing: {e}")
+
+    if st.button("Clear chat history", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.questions_count = 0
+        st.experimental_rerun()
 
     st.markdown("---")
     st.markdown("#### LLM status")
-    # لاحقًا هنستخدم نفس الكود السابق للـ status
+    if rag.llm_client is None:
+        st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
+    else:
+        st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
 
-# بعد ما قرينا toggle نحدّث حالة الثيم ونطبّق CSS
-st.session_state.ui_theme = "dark" if dark_mode else "light"
 
-if st.session_state.ui_theme == "dark":
-    st.markdown(DARK_CSS, unsafe_allow_html=True)
-else:
-    st.markdown(LIGHT_CSS, unsafe_allow_html=True)
-
-# =====================  HEADER  ===================== #
+# ---------- Header ----------
 
 st.markdown(
     """
@@ -455,69 +294,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# =====================  SESSION STATE لباقي التطبيق  ===================== #
 
-if "rag" not in st.session_state:
-    st.session_state.rag: RAGEngine = RAGEngine()
-    st.session_state.index_built = False
-    st.session_state.chat_history: List[dict] = []
-    st.session_state.last_files = []
-
-rag: RAGEngine = st.session_state.rag
-
-# =====================  منطق الرفع + الأزرار ===================== #
-
-uploaded_files = st.session_state.sidebar_uploaded_files
-file_paths = []
-if uploaded_files:
-    for uf in uploaded_files:
-        save_path = os.path.join("uploaded_" + uf.name)
-        with open(save_path, "wb") as f:
-            f.write(uf.getbuffer())
-        file_paths.append(save_path)
-
-# نستخدم st.session_state للأزرار
-if 'index_clicked' not in st.session_state:
-    st.session_state.index_clicked = False
-if 'clear_clicked' not in st.session_state:
-    st.session_state.clear_clicked = False
-
-# نعمل set للقيم من آخر ضغطة (Streamlit reruns)
-st.session_state.index_clicked = index_clicked or st.session_state.index_clicked
-st.session_state.clear_clicked = clear_clicked or st.session_state.clear_clicked
-
-# تنفيذ زرار Index
-if st.session_state.index_clicked:
-    if not file_paths and not os.path.exists("sample.txt"):
-        st.sidebar.error("Please upload at least one document or load the sample.")
-    else:
-        if not file_paths and os.path.exists("sample.txt"):
-            file_paths = ["sample.txt"]
-
-        with st.spinner("Indexing documents with embeddings & FAISS..."):
-            try:
-                num_files, num_chunks = rag.build_index(file_paths)
-                st.session_state.index_built = True
-                st.session_state.last_files = file_paths
-                st.sidebar.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
-            except Exception as e:
-                st.session_state.index_built = False
-                st.sidebar.error(f"Error while indexing: {e}")
-    st.session_state.index_clicked = False
-
-# تنفيذ زرار Clear chat
-if st.session_state.clear_clicked:
-    st.session_state.chat_history = []
-    st.session_state.clear_clicked = False
-
-# LLM status
-with st.sidebar:
-    if rag.llm_client is None:
-        st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
-    else:
-        st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
-
-# =====================  MAIN LAYOUT  ===================== #
+# ---------- Main glass card ----------
 
 st.markdown("<div class='glass-shell'>", unsafe_allow_html=True)
 
@@ -541,9 +319,75 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
+# ---------- Dynamic stats cards ----------
+
+stats_col1, stats_col2, stats_col3 = st.columns(3)
+
+with stats_col1:
+    st.markdown(
+        f"""
+    <div style="
+        padding:0.7rem 0.9rem;
+        border-radius:14px;
+        background:rgba(255,255,255,0.85);
+        border:1px solid #E5E7EB;
+        box-shadow:0 10px 24px rgba(148,163,184,0.35);
+        ">
+        <div style="font-size:0.78rem;color:#6B7280;">FILES</div>
+        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
+            {len(st.session_state.last_files) if st.session_state.last_files else 0}
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+with stats_col2:
+    st.markdown(
+        f"""
+    <div style="
+        padding:0.7rem 0.9rem;
+        border-radius:14px;
+        background:rgba(255,255,255,0.85);
+        border:1px solid #E5E7EB;
+        box-shadow:0 10px 24px rgba(148,163,184,0.35);
+        ">
+        <div style="font-size:0.78rem;color:#6B7280;">CHUNKS</div>
+        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
+            {st.session_state.chunks_count}
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+with stats_col3:
+    st.markdown(
+        f"""
+    <div style="
+        padding:0.7rem 0.9rem;
+        border-radius:14px;
+        background:rgba(255,255,255,0.85);
+        border:1px solid #E5E7EB;
+        box-shadow:0 10px 24px rgba(148,163,184,0.35);
+        ">
+        <div style="font-size:0.78rem;color:#6B7280;">QUESTIONS</div>
+        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
+            {st.session_state.questions_count}
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+# ---------- Layout: chat + right panel ----------
+
 left_col, right_col = st.columns([2.2, 1], gap="large")
 
-# ---------- Chat ----------
+
+# ---------- Left column: chat ----------
 
 with left_col:
     st.subheader("CHAT · CONSOLE")
@@ -551,6 +395,7 @@ with left_col:
     if not st.session_state.index_built:
         st.info("Please upload and index documents first from the sidebar.")
     else:
+        # عرض المحادثة السابقة
         for msg in st.session_state.chat_history:
             with st.chat_message(
                 msg["role"],
@@ -561,6 +406,7 @@ with left_col:
         user_input = st.chat_input("Ask a question about your documents...")
 
         if user_input:
+            st.session_state.questions_count += 1
             st.session_state.chat_history.append({"role": "user", "content": user_input})
 
             with st.chat_message("user", avatar="ＵＳＲ"):
@@ -583,7 +429,8 @@ with left_col:
 
             st.experimental_rerun()
 
-# ---------- Info ----------
+
+# ---------- Right column: session info + explorer ----------
 
 with right_col:
     st.subheader("SESSION · STATUS")
@@ -591,9 +438,20 @@ with right_col:
     if st.session_state.index_built and st.session_state.last_files:
         st.markdown(f"- **Files indexed:** {len(st.session_state.last_files)}")
         st.markdown("- **Vector index:** FAISS (L2 distance)")
+        st.markdown(f"- **Chunks:** {st.session_state.chunks_count}")
     else:
         st.markdown("- **Files indexed:** 0")
         st.markdown("- **Vector index:** not built yet")
+
+    st.markdown("---")
+    st.subheader("DOCUMENTS · EXPLORER")
+
+    if st.session_state.last_files:
+        for fp in st.session_state.last_files:
+            name = os.path.basename(fp)
+            st.markdown(f"- {name}")
+    else:
+        st.markdown("_No documents indexed yet._")
 
     st.markdown("---")
     st.subheader("FLOW · PIPELINE")
