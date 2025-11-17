@@ -13,77 +13,69 @@ st.set_page_config(page_title="RAG Chat Bot · Premium", layout="wide")
 GLASS_CSS = """
 <style>
 
-/* خلفية جRadial + Gradient تعطي إحساس هلامي */
+/* خلفية فاتحة هلامية (glassmorphism) */
 body {
-  background: radial-gradient(circle at 0% 0%, #1d4ed8 0, #020617 35%, #0f172a 70%, #4c1d95 100%);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.20), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(236,72,153,0.18), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(45,212,191,0.18), transparent 55%),
+    #F3F4F6;
 }
 
-/* إزالة المسافات الزائدة */
+/* تقليل الـ padding وتوسيط المحتوى */
 .main .block-container {
   padding-top: 1.2rem;
   padding-bottom: 1.5rem;
   max-width: 1180px;
 }
 
-/* سايدبار شفافة زجاجية */
+/* سايدبار زجاجي أبيض */
 [data-testid="stSidebar"] {
   background: transparent;
 }
 
-[data-testid="stSidebarNav"] {
-  display: none;
-}
-
 section[data-testid="stSidebar"] > div {
-  background: rgba(15,23,42,0.78);
+  background: rgba(255,255,255,0.85);
   border-radius: 24px;
   margin: 0.8rem 0.4rem 0.8rem 0.2rem;
   padding: 1.1rem 1rem 1.3rem 1rem;
-  border: 1px solid rgba(148,163,255,0.45);
-  box-shadow: 0 24px 70px rgba(15,23,42,0.95);
-  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(148,163,184,0.50);
+  box-shadow: 0 24px 55px rgba(15,23,42,0.12);
+  backdrop-filter: blur(22px) saturate(160%);
 }
 
 /* كارت زجاجي رئيسي للشات */
 .glass-shell {
-  background: radial-gradient(circle at 0 0, rgba(96,165,250,0.22), transparent 55%),
-              radial-gradient(circle at 100% 100%, rgba(192,132,252,0.22), transparent 55%),
-              rgba(15,23,42,0.78);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.18), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(244,114,182,0.18), transparent 55%),
+    rgba(255,255,255,0.92);
   border-radius: 28px;
   padding: 1.4rem 1.6rem 1.6rem 1.6rem;
-  border: 1px solid rgba(148,163,255,0.45);
-  box-shadow: 0 30px 90px rgba(15,23,42,0.95);
+  border: 1px solid rgba(226,232,240,0.95);
+  box-shadow: 0 28px 70px rgba(15,23,42,0.20);
   backdrop-filter: blur(26px) saturate(170%);
 }
 
-/* عناوين الهيدر */
+/* عناوين واضحة غامقة */
 h1, h2, h3 {
+  color: #0F172A;
   font-weight: 700;
 }
 
-/* شات مساحته ثابتة */
-.chat-area {
-  max-height: 520px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-
 /* فقاعات الشات - مستخدم */
-div[data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] > p {
-  margin-bottom: 0.35rem;
-}
-
 div[data-testid="stChatMessage"][data-testid*="user"] {
-  background: radial-gradient(circle at 0% 0%, rgba(96,165,250,0.35), rgba(15,23,42,0.95));
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #F9FAFB;
   border-radius: 18px;
-  border: 1px solid rgba(129,140,248,0.8);
+  border: none;
 }
 
 /* فقاعات الشات - بوت */
 div[data-testid="stChatMessage"][data-testid*="assistant"] {
-  background: rgba(15,23,42,0.88);
+  background: rgba(248,250,252,0.95);
   border-radius: 18px;
-  border: 1px solid rgba(148,163,255,0.35);
+  border: 1px solid rgba(203,213,225,0.9);
 }
 
 /* صندوق إدخال الشات */
@@ -93,45 +85,41 @@ div[data-testid="stChatMessage"][data-testid*="assistant"] {
 }
 
 div[data-testid="stChatInput"] textarea {
-  background: rgba(15,23,42,0.88);
+  background: rgba(255,255,255,0.98);
   border-radius: 999px;
-  border: 1px solid rgba(148,163,255,0.6);
+  border: 1px solid rgba(209,213,219,0.9);
   padding: 0.75rem 1rem;
-  color: #E2E8F0;
-  box-shadow: 0 0 0 1px rgba(15,23,42,0.8), 0 18px 40px rgba(15,23,42,0.9);
+  color: #0F172A;
+  box-shadow: 0 0 0 1px rgba(148,163,184,0.35), 0 16px 38px rgba(15,23,42,0.18);
 }
 
 div[data-testid="stChatInput"] textarea:focus {
   outline: none !important;
-  border-color: #818cf8;
-  box-shadow: 0 0 0 1px rgba(129,140,248,0.9), 0 20px 45px rgba(15,23,42,1);
+  border-color: #6366F1;
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.9), 0 18px 45px rgba(79,70,229,0.25);
 }
 
-/* زر إرسال الشات (الأيقونة) */
+/* زرار الشات (أيقونة الإرسال) */
 button[kind="primary"] svg {
-  color: #f9fafb !important;
+  color: #F9FAFB !important;
 }
 
-/* أزرار سايدبار - شكل Jelly / Neumorphism */
+/* أزرار سايدبار بشكل Jelly */
 section[data-testid="stSidebar"] button[kind="primary"] {
   border-radius: 999px;
-  background: radial-gradient(circle at 0 0, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
   color: #f9fafb;
   border: 0;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
-  box-shadow:
-    0 10px 25px rgba(15,23,42,0.9),
-    inset 0 0 0 1px rgba(248,250,252,0.05);
+  box-shadow: 0 10px 24px rgba(79,70,229,0.55);
   transition: all 0.15s ease-out;
 }
 
 section[data-testid="stSidebar"] button[kind="primary"]:hover {
   transform: translateY(-1px) scale(1.01);
-  box-shadow:
-    0 14px 30px rgba(15,23,42,1),
-    0 0 0 1px rgba(248,250,252,0.10);
-  filter: saturate(130%);
+  box-shadow: 0 14px 32px rgba(79,70,229,0.65);
+  filter: saturate(120%);
 }
 
 /* Badges للمصادر */
@@ -139,17 +127,18 @@ section[data-testid="stSidebar"] button[kind="primary"]:hover {
     display: inline-block;
     padding: 0.18rem 0.55rem;
     border-radius: 999px;
-    background: rgba(15,23,42,0.95);
-    color: #E2E8F0;
+    background: rgba(15,23,42,0.05);
+    color: #111827;
     font-size: 0.70rem;
     margin-right: 0.25rem;
     margin-top: 0.18rem;
-    border: 1px solid rgba(129,140,248,0.9);
+    border: 1px solid rgba(148,163,184,0.9);
 }
 
 /* قوائم How it works / Tips */
 ul.custom-list {
   padding-left: 1.1rem;
+  color: #374151;
 }
 
 ul.custom-list li {
@@ -159,6 +148,7 @@ ul.custom-list li {
 </style>
 """
 
+
 st.markdown(GLASS_CSS, unsafe_allow_html=True)
 
 
@@ -166,25 +156,35 @@ st.markdown(GLASS_CSS, unsafe_allow_html=True)
 
 st.markdown(
     """
-<div style="text-align:center; margin-top:0.2rem; margin-bottom:1.1rem;">
-  <div style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.23rem 0.9rem;
-              border-radius:999px; background:rgba(15,23,42,0.85); border:1px solid rgba(148,163,255,0.45);
-              box-shadow:0 14px 35px rgba(15,23,42,0.9); backdrop-filter:blur(18px) saturate(140%);">
-    <span style="font-size:1.2rem;">🤖</span>
-    <span style="font-size:0.86rem; color:#E5E7EB;">
-      AI RAG Assistant · Reads your docs and answers in real time
+<div style="text-align:center; margin-top:0.4rem; margin-bottom:1.1rem;">
+  <h1 style="
+      font-size:2.4rem;
+      margin-bottom:0.35rem;
+      background: linear-gradient(120deg, #4f46e5, #ec4899);
+      -webkit-background-clip:text;
+      color: transparent;
+  ">
+    RAG Chat Bot
+  </h1>
+
+  <p style="font-size:1rem; color:#4B5563; max-width:740px; margin:auto;">
+    Premium AI assistant that reads your PDF & text documents, understands them, and answers questions instantly.
+    Designed with a modern glassmorphism interface for your portfolio and real-world clients.
+  </p>
+
+  <div style="margin-top:0.9rem; display:inline-flex; gap:0.4rem; flex-wrap:wrap; justify-content:center;">
+    <span style="background:#EEF2FF; color:#3730A3; padding:0.25rem 0.75rem; border-radius:999px; font-size:0.82rem;">
+      📂 Upload · 🔍 Index · 💬 Ask
+    </span>
+    <span style="background:#ECFEFF; color:#0F766E; padding:0.25rem 0.75rem; border-radius:999px; font-size:0.82rem;">
+      Built with Python · Streamlit · FAISS
     </span>
   </div>
-
-  <h1 style="font-size:2.6rem; margin-top:0.9rem; margin-bottom:0.25rem;">RAG Chat Bot</h1>
-  <p style="font-size:1.02rem; color:#CBD5F5; max-width:760px; margin:auto;">
-    Upload your PDFs & text files, index them with vector search, and chat with your knowledge base
-    using an elegant glassmorphism interface – perfect for technical docs, reports, and client deliverables.
-  </p>
 </div>
 """,
     unsafe_allow_html=True,
 )
+
 
 
 # ---------- تحضير الـ session state ----------
@@ -344,3 +344,4 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
+
