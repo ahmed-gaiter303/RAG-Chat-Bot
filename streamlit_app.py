@@ -13,12 +13,13 @@ st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
 GLASS_CSS = """
 <style>
 
-/* خلفية بشريطين مائلين (Aurora Ribbon) */
-body {
+/* نجبر الخلفية تبقى فاتحة حتى لو المستخدم فعّل دارك مود */
+html, body, [data-testid="stAppViewContainer"] {
   background:
     linear-gradient(135deg, rgba(79,70,229,0.14), transparent 55%),
     linear-gradient(315deg, rgba(236,72,153,0.12), transparent 55%),
-    #F9FAFB;
+    #F9FAFB !important;
+  color: #111827 !important;
 }
 
 /* container أضيق شوية كأنه dashboard */
@@ -30,7 +31,7 @@ body {
 
 /* سايدبار أبيض مسطّح بحافة واضحة */
 [data-testid="stSidebar"] {
-  background: transparent;
+  background: transparent !important;
 }
 
 section[data-testid="stSidebar"] > div {
@@ -125,7 +126,7 @@ button[kind="primary"] svg {
   color: #F9FAFB !important;
 }
 
-/* أزرار السايدبار → مستطيلة داكنة (مش شكل Streamlit العادي) */
+/* أزرار السايدبار → مستطيلة داكنة */
 section[data-testid="stSidebar"] button[kind="primary"] {
   border-radius: 10px;
   background: #111827;
@@ -170,7 +171,7 @@ ul.custom-list li {
 st.markdown(GLASS_CSS, unsafe_allow_html=True)
 
 
-# ---------- Header / Hero بدون Emojis تقليدية ----------
+# ---------- Header / Hero ----------
 
 st.markdown(
     """
@@ -284,6 +285,7 @@ st.markdown(
 
 left_col, right_col = st.columns([2.2, 1], gap="large")
 
+
 # ---------- Left column: Chat ----------
 
 with left_col:
@@ -323,6 +325,7 @@ with left_col:
                         )
 
             st.experimental_rerun()
+
 
 # ---------- Right column: Info ----------
 
