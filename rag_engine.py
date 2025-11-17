@@ -2,11 +2,11 @@ import os
 import textwrap
 from typing import List, Tuple
 
-import google.generativeai as genai
 import faiss
 import numpy as np
+import google.generativeai as genai
 
-# أي كلاس chunk عندك (عدّل الاسم لو مختلف)
+
 class RetrievedChunk:
     def __init__(self, content: str, source: str):
         self.content = content
@@ -20,7 +20,6 @@ class RAGEngine:
         - تحميل/تهيئة موديل Gemini (لو فيه مفتاح).
         - تحضير FAISS index.
         """
-        # إعداد Gemini
         api_key = os.environ.get("GEMINI_API_KEY")
         if api_key:
             genai.configure(api_key=api_key)
@@ -32,15 +31,13 @@ class RAGEngine:
         self.index = None
         self.chunks: List[RetrievedChunk] = []
 
-    # --------- جزء الـ Embeddings (بديل بسيط) --------- #
+    # ---------- Embeddings بسيطة (للديمو) ---------- #
 
     def _embed_text(self, texts: List[str]) -> np.ndarray:
         """
-        دالة بسيطة لإنتاج embeddings.
-        لو عندك موديل جاهز (مثلاً from sentence_transformers) استخدمه هنا.
-        مؤقتًا هنستخدم تمثيل عددي بسيط عشان الديمو.
+        دالة بسيطة لإنتاج embeddings بطول ثابت (embedding_dim).
+        لمشروع production استبدلها بموديل حقيقي من sentence_transformers أو غيره.
         """
-        # WARNING: لمشروع production استخدم موديل حقيقي للـ embeddings.
         vectors = []
         for t in texts:
             arr = np.zeros(self.embedding_dim, dtype="float32")
@@ -49,12 +46,12 @@ class RAGEngine:
             vectors.append(arr)
         return np.vstack(vectors)
 
-    # --------- بناء الـ index --------- #
+    # ---------- بناء الـ index ---------- #
 
     def build_index(self, file_paths: List[str]) -> Tuple[int, int]:
         """
-        يقسّم الملفات إلى مقاطع، يبني FAISS index.
-        يرجع: (عدد الملفات, عدد المقاطع).
+        يقسّم الملفات النصية إلى مقاطع ويُنشئ عليها FAISS index.
+        يرجع (عدد الملفات, عدد المقاطع).
         """
         all_chunks: List[RetrievedChunk] = []
 
@@ -62,29 +59,27 @@ class RAGEngine:
             if not os.path.exists(path):
                 continue
 
-            # هنا نفترض ملفات نص عادي؛ لو PDF عندك logic تاني مسبقًا
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
 
-            # تقسيم بسيط كل 400 كلمة مثلاً
             words = text.split()
             chunk_size = 400
             for i in range(0, len(words), chunk_size):
                 chunk_words = words[i : i + chunk_size]
                 content = " ".join(chunk_words).strip()
                 if content:
-                    all_chunks.append(RetrievedChunk(content=content, source=os.path.basename(path)))
+                    all_chunks.append(
+                        RetrievedChunk(content=content, source=os.path.basename(path))
+                    )
 
         if not all_chunks:
             self.index = None
             self.chunks = []
             return len(file_paths), 0
 
-        # بناء embeddings
         texts = [c.content for c in all_chunks]
         embs = self._embed_text(texts)
 
-        # FAISS index
         index = faiss.IndexFlatL2(self.embedding_dim)
         index.add(embs)
 
@@ -93,7 +88,7 @@ class RAGEngine:
 
         return len(file_paths), len(all_chunks)
 
-    # --------- استرجاع المقاطع --------- #
+    # ---------- استرجاع المقاطع ---------- #
 
     def _retrieve(self, query: str, top_k: int = 4) -> List[RetrievedChunk]:
         """
@@ -102,7 +97,7 @@ class RAGEngine:
         if self.index is None or not self.chunks:
             return []
 
-        q_emb = self._embed_text([query])  # 1 x d
+        q_emb = self._embed_text([query])
         distances, indices = self.index.search(q_emb, top_k)
 
         retrieved: List[RetrievedChunk] = []
@@ -112,27 +107,26 @@ class RAGEngine:
 
         return retrieved
 
-    # --------- توليد الإجابة --------- #
+    # ---------- توليد الإجابة بـ Gemini ---------- #
 
     def answer(self, query: str) -> Tuple[str, List[RetrievedChunk]]:
         """
-        واجهة رئيسية يستدعيها streamlit_app:
+        الواجهة التي يستدعيها streamlit_app:
         ترجع (النص النهائي, قائمة المقاطع المستخدمة).
         """
         retrieved = self._retrieve(query)
 
-        # حالة عدم وجود أي مقاطع
         if not retrieved:
             return "لم أجد أي مقاطع مرتبطة بسؤالك في المستندات.", []
 
-        # لو مفيش موديل Gemini: رجّع snippets فقط
+        # لو مفيش موديل Gemini configured → رجّع snippets فقط
         if self.model is None:
             text = "هنا أهم المقاطع من مستنداتك المتعلقة بسؤالك:\n\n"
             for i, ch in enumerate(retrieved, start=1):
                 text += f"[{i}] {ch.content}\n\n"
             return text, retrieved
 
-        # إعداد سياق المقاطع
+        # بناء سياق المقاطع
         context_blocks = []
         for i, ch in enumerate(retrieved, start=1):
             context_blocks.append(f"[{i}] {ch.content}")
@@ -140,27 +134,37 @@ class RAGEngine:
 
         prompt = textwrap.dedent(
             f"""
-            أنت مساعد ذكي للإجابة عن الأسئلة اعتمادًا على المقاطع التالية من مستندات المستخدم.
-            استخدم المعلومات من المقاطع فقط، ولو المعلومة غير موجودة قل ذلك بوضوح.
+            أنت مساعد ذكاء اصطناعي للإجابة عن أسئلة المستخدم اعتمادًا فقط على المقاطع التالية من المستندات.
 
             سؤال المستخدم:
             {query}
 
-            مقاطع من المستندات:
+            المقاطع المسترجعة من المستندات:
             {context_text}
 
-            المطلوب:
-            - إجابة واضحة ومختصرة ومباشرة.
-            - لو فيه أكثر من نقطة مهمة، اعرضها في شكل نقاط مرقّمة.
-            - لا تذكر أرقام المقاطع في النص، فقط استخدمها داخليًا.
+            تعليمات عامة:
+            - استخدم المعلومات الواضحة في المقاطع فقط، وتجنّب الاختراع أو التخمين من خارجها.
+            - لو المعلومة غير مكتوبة صراحة ولكن يمكن استنتاجها منطقيًا من التواريخ أو العناوين، يجوز الاستنتاج بشكل معقول.
+            - لو لا يمكن الإجابة إطلاقًا من المقاطع، قل للمستخدم بوضوح أن المعلومات غير متوفرة في المستندات.
+
+            قواعد خاصة للسير الذاتية (CV):
+            - لو السؤال عن "current role" أو "current job" أو "الدور الحالي" أو "الوظيفة الحالية":
+              * ابحث في المقاطع عن الخبرة العملية (Professional Experience / Experience).
+              * اختر أحدث وظيفة من حيث التاريخ أو آخر وظيفة مذكورة، واعتبرها "أحدث دور مهني".
+              * أرجِع المسمى الوظيفي + اسم الشركة + نوع العمل إن وُجد (Remote / On‑Site).
+
+            إخراج الإجابة:
+            - أجب باللغة العربية ما لم يطلب المستخدم الإنجليزية صراحة.
+            - اجعل الإجابة قصيرة وواضحة، ويمكنك استخدام نقاط مرقّمة لو هناك أكثر من نقطة مهمة.
+            - لا تذكر أرقام المقاطع في النص، فهي للاستخدام الداخلي فقط.
             """
         )
 
         try:
             resp = self.model.generate_content(prompt)
             answer_text = resp.text.strip() if resp and resp.text else "تعذر توليد إجابة من Gemini."
-        except Exception as e:
-            # fallback لو حصل خطأ في Gemini
+        except Exception:
+            # fallback لو حصل خطأ في Gemini (rate limit مثلًا)
             answer_text = "تعذر الاتصال بـ Gemini، لذا أعرض لك المقاطع الأكثر صلة:\n\n"
             for i, ch in enumerate(retrieved, start=1):
                 answer_text += f"[{i}] {ch.content}\n\n"
