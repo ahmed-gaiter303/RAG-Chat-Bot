@@ -5,7 +5,6 @@ import streamlit as st
 
 from rag_engine import RAGEngine
 
-
 st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
 
 # =====================  THEME CSS  ===================== #
@@ -43,7 +42,7 @@ section[data-testid="stSidebar"] > div {
   box-shadow: 0 14px 32px rgba(15,23,42,0.12);
 }
 
-/* نصوص السايدبار (ومنها Dark mode label) */
+/* نصوص السايدبار (منها Dark mode) */
 section[data-testid="stSidebar"] {
   color: #111827;
 }
@@ -61,7 +60,6 @@ section[data-testid="stSidebar"] label {
   color: #111827 !important;
 }
 
-/* النصوص داخل كارت الرفع */
 [data-testid="stFileUploaderDropzone"] * {
   color: #111827 !important;
 }
@@ -156,7 +154,6 @@ section[data-testid="stSidebar"] button {
   transition: all 0.12s ease-out;
 }
 
-/* Hover في Light */
 section[data-testid="stSidebar"] button:not(:disabled):hover {
   background-color: #EEF2FF !important;
   border-color: #4F46E5 !important;
@@ -165,7 +162,6 @@ section[data-testid="stSidebar"] button:not(:disabled):hover {
   box-shadow: 0 14px 30px rgba(148,163,184,0.55);
 }
 
-/* Disabled في Light */
 section[data-testid="stSidebar"] button:disabled {
   background-color: #F3F4F6 !important;
   color: #9CA3AF !important;
@@ -395,48 +391,17 @@ div.stAlert {
 </style>
 """
 
-# =====================  THEME TOGGLE  ===================== #
+# =====================  SESSION STATE للثيم  ===================== #
 
 if "ui_theme" not in st.session_state:
     st.session_state.ui_theme = "light"
 
+# =====================  SIDEBAR: كل العناصر بما فيها التوجّل  ===================== #
+
 with st.sidebar:
     st.markdown("### Appearance")
-    dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"))
+    dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"), key="theme_toggle")
 
-st.session_state.ui_theme = "dark" if dark_mode else "light"
-
-if st.session_state.ui_theme == "dark":
-    st.markdown(DARK_CSS, unsafe_allow_html=True)
-else:
-    st.markdown(LIGHT_CSS, unsafe_allow_html=True)
-
-# =====================  HEADER  ===================== #
-
-st.markdown(
-    """
-<div style="margin-bottom:0.6rem;">
-  <div style="font-size:0.78rem; letter-spacing:0.18em; color:#6B7280; text-transform:uppercase; margin-bottom:0.25rem;">
-    AHMED GAITER · RAG SUITE
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-# =====================  SESSION STATE  ===================== #
-
-if "rag" not in st.session_state:
-    st.session_state.rag: RAGEngine = RAGEngine()
-    st.session_state.index_built = False
-    st.session_state.chat_history: List[dict] = []
-    st.session_state.last_files = []
-
-rag: RAGEngine = st.session_state.rag
-
-# =====================  SIDEBAR: UPLOAD & CONTROLS  ===================== #
-
-with st.sidebar:
     st.markdown("#### Upload documents")
     uploaded_files = st.file_uploader(
         "PDF / TXT",
@@ -458,39 +423,95 @@ with st.sidebar:
                 )
         st.success("Sample document created. Click 'Index documents' to use it.")
 
-    file_paths = []
-    if uploaded_files:
-        for uf in uploaded_files:
-            save_path = os.path.join("uploaded_" + uf.name)
-            with open(save_path, "wb") as f:
-                f.write(uf.getbuffer())
-            file_paths.append(save_path)
+    # مكان لتخزين المسارات (هيتملأ بعد ما نعرف الثيم ونطبّق الـ CSS)
+    st.session_state.sidebar_uploaded_files = uploaded_files
 
     st.markdown("---")
-
-    if st.button("Index documents", use_container_width=True):
-        if not file_paths and not os.path.exists("sample.txt"):
-            st.error("Please upload at least one document or load the sample.")
-        else:
-            if not file_paths and os.path.exists("sample.txt"):
-                file_paths = ["sample.txt"]
-
-            with st.spinner("Indexing documents with embeddings & FAISS..."):
-                try:
-                    num_files, num_chunks = rag.build_index(file_paths)
-                    st.session_state.index_built = True
-                    st.session_state.last_files = file_paths
-                    st.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
-                except Exception as e:
-                    st.session_state.index_built = False
-                    st.error(f"Error while indexing: {e}")
-
-    if st.button("Clear chat history", use_container_width=True):
-        st.session_state.chat_history = []
-        st.experimental_rerun()
+    index_clicked = st.button("Index documents", use_container_width=True)
+    clear_clicked = st.button("Clear chat history", use_container_width=True)
 
     st.markdown("---")
     st.markdown("#### LLM status")
+    # لاحقًا هنستخدم نفس الكود السابق للـ status
+
+# بعد ما قرينا toggle نحدّث حالة الثيم ونطبّق CSS
+st.session_state.ui_theme = "dark" if dark_mode else "light"
+
+if st.session_state.ui_theme == "dark":
+    st.markdown(DARK_CSS, unsafe_allow_html=True)
+else:
+    st.markdown(LIGHT_CSS, unsafe_allow_html=True)
+
+# =====================  HEADER  ===================== #
+
+st.markdown(
+    """
+<div style="margin-bottom:0.6rem;">
+  <div style="font-size:0.78rem; letter-spacing:0.18em; color:#6B7280; text-transform:uppercase; margin-bottom:0.25rem;">
+    AHMED GAITER · RAG SUITE
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# =====================  SESSION STATE لباقي التطبيق  ===================== #
+
+if "rag" not in st.session_state:
+    st.session_state.rag: RAGEngine = RAGEngine()
+    st.session_state.index_built = False
+    st.session_state.chat_history: List[dict] = []
+    st.session_state.last_files = []
+
+rag: RAGEngine = st.session_state.rag
+
+# =====================  منطق الرفع + الأزرار ===================== #
+
+uploaded_files = st.session_state.sidebar_uploaded_files
+file_paths = []
+if uploaded_files:
+    for uf in uploaded_files:
+        save_path = os.path.join("uploaded_" + uf.name)
+        with open(save_path, "wb") as f:
+            f.write(uf.getbuffer())
+        file_paths.append(save_path)
+
+# نستخدم st.session_state للأزرار
+if 'index_clicked' not in st.session_state:
+    st.session_state.index_clicked = False
+if 'clear_clicked' not in st.session_state:
+    st.session_state.clear_clicked = False
+
+# نعمل set للقيم من آخر ضغطة (Streamlit reruns)
+st.session_state.index_clicked = index_clicked or st.session_state.index_clicked
+st.session_state.clear_clicked = clear_clicked or st.session_state.clear_clicked
+
+# تنفيذ زرار Index
+if st.session_state.index_clicked:
+    if not file_paths and not os.path.exists("sample.txt"):
+        st.sidebar.error("Please upload at least one document or load the sample.")
+    else:
+        if not file_paths and os.path.exists("sample.txt"):
+            file_paths = ["sample.txt"]
+
+        with st.spinner("Indexing documents with embeddings & FAISS..."):
+            try:
+                num_files, num_chunks = rag.build_index(file_paths)
+                st.session_state.index_built = True
+                st.session_state.last_files = file_paths
+                st.sidebar.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
+            except Exception as e:
+                st.session_state.index_built = False
+                st.sidebar.error(f"Error while indexing: {e}")
+    st.session_state.index_clicked = False
+
+# تنفيذ زرار Clear chat
+if st.session_state.clear_clicked:
+    st.session_state.chat_history = []
+    st.session_state.clear_clicked = False
+
+# LLM status
+with st.sidebar:
     if rag.llm_client is None:
         st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
     else:
