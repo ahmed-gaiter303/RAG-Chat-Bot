@@ -16,7 +16,7 @@ st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
 APP_CSS = """
 <style>
 
-/* خلفية فاتحة هلامية */
+/* Light background */
 html, body, [data-testid="stAppViewContainer"] {
   background:
     radial-gradient(circle at 0% 0%, rgba(129,140,248,0.16), transparent 55%),
@@ -25,7 +25,7 @@ html, body, [data-testid="stAppViewContainer"] {
   color: #111827;
 }
 
-/* حاوية رئيسية */
+/* Main container */
 .main .block-container {
   padding-top: 1.4rem;
   padding-bottom: 1.5rem;
@@ -50,7 +50,7 @@ section[data-testid="stSidebar"] {
   color: #111827;
 }
 
-/* كارت رفع الملفات */
+/* File uploader */
 [data-testid="stFileUploaderDropzone"] {
   background-color: #FFFFFF !important;
   border-radius: 16px !important;
@@ -93,7 +93,7 @@ section[data-testid="stSidebar"] {
   border: 1px solid rgba(248,250,252,0.35);
 }
 
-/* عناوين */
+/* Headings */
 h1 {
   font-size: 2.2rem;
   letter-spacing: 0.04em;
@@ -104,7 +104,7 @@ h2, h3 {
   color: #111827;
 }
 
-/* فقاعات الشات */
+/* Chat bubbles */
 div[data-testid="stChatMessage"][data-testid*="user"] {
   background: #111827;
   color: #F9FAFB;
@@ -119,7 +119,7 @@ div[data-testid="stChatMessage"][data-testid*="assistant"] {
   border: 1px solid rgba(209,213,219,0.9);
 }
 
-/* إدخال الشات */
+/* Chat input */
 .stChatInputContainer {
   background: transparent;
   padding-top: 0.6rem;
@@ -140,7 +140,7 @@ div[data-testid="stChatInput"] textarea:focus {
   box-shadow: 0 0 0 1px rgba(79,70,229,0.85), 0 16px 36px rgba(79,70,229,0.25);
 }
 
-/* أزرار السايدبار */
+/* Sidebar buttons */
 section[data-testid="stSidebar"] button {
   color: #111827 !important;
   background-color: #FFFFFF !important;
@@ -167,7 +167,7 @@ section[data-testid="stSidebar"] button:disabled {
   box-shadow: none !important;
 }
 
-/* Badges للمصادر */
+/* Source badges */
 .source-badge {
     display: inline-block;
     padding: 0.15rem 0.55rem;
@@ -179,7 +179,7 @@ section[data-testid="stSidebar"] button:disabled {
     margin-top: 0.18rem;
 }
 
-/* القوائم */
+/* Lists */
 ul.custom-list {
   padding-left: 1.1rem;
   color: #374151;
@@ -189,7 +189,7 @@ ul.custom-list li {
   margin-bottom: 0.22rem;
 }
 
-/* رسائل info */
+/* Info alerts */
 div.stAlert {
   background-color: #E5ECFF;
   color: #111827;
@@ -408,13 +408,17 @@ if st.session_state.index_built and st.session_state.last_files:
             quick_question = "Summarize this CV in 4 concise bullet points."
     with qa_col2:
         if st.button("Technical skills", use_container_width=True):
-            quick_question = "List the main technical skills mentioned in this CV or document."
+            quick_question = (
+                "List the main technical skills mentioned in this CV or document."
+            )
     with qa_col3:
         if st.button("Certifications", use_container_width=True):
             quick_question = "What certifications and courses are mentioned?"
     with qa_col4:
         if st.button("Experience overview", use_container_width=True):
-            quick_question = "Summarize the professional experience section in this CV."
+            quick_question = (
+                "Summarize the professional experience section in this CV."
+            )
 
 
 # ---------- Layout: chat + right panel ----------
@@ -430,7 +434,7 @@ with left_col:
     if not st.session_state.index_built:
         st.info("Please upload and index documents first from the sidebar.")
     else:
-        # عرض المحادثة السابقة
+        # Show history
         for msg in st.session_state.chat_history:
             with st.chat_message(
                 msg["role"],
@@ -438,7 +442,7 @@ with left_col:
             ):
                 st.markdown(msg["content"])
 
-        # إما سؤال من Quick Action أو من المستخدم
+        # Quick action question or user input
         user_input = quick_question or st.chat_input(
             "Ask a question about your documents..."
         )
@@ -562,9 +566,9 @@ with right_col:
     st.markdown(
         """
 <ul class="custom-list">
-<li>Use clear questions like <i>“Summarize this CV”</i> أو <i>“What are the key technical skills?”</i>.</li>
-<li>Upload a Job Description للحصول على تحليل تطابق CV مع الوظيفة.</li>
-<li>في الإنتاج، يمكن توصيل هذه الواجهة بوثائق الشركة أو وثائق العملاء كـ branded assistant.</li>
+<li>Use clear questions like <i>"Summarize this CV"</i> or <i>"What are the key technical skills?"</i>.</li>
+<li>Upload a Job Description to get a CV vs JD match analysis.</li>
+<li>In production, this interface can be connected to company or client documentation as a branded assistant.</li>
 </ul>
 """,
         unsafe_allow_html=True,
