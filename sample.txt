@@ -1,0 +1,12 @@
+Welcome to the RAG Chat Bot sample document.
+
+This file demonstrates how the bot can read your content and answer questions about it.
+
+You can replace this text with your own documentation, reports, or manuals.
+Ask questions like:
+- What is this project about?
+- How can this chatbot be used in a company?
+- What is Retrieval-Augmented Generation (RAG)?
+
+RAG combines document retrieval with a language model
+so that answers stay grounded in your data instead of hallucinating.
