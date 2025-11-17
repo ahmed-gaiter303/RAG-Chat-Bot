@@ -8,162 +8,205 @@ from rag_engine import RAGEngine
 
 # ---------- Page config ----------
 
-st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
+st.set_page_config(
+    page_title="RAG Talent & Docs Assistant · Ahmed Gaiter",
+    layout="wide",
+    page_icon="💼",
+)
 
 
-# ---------- Global light UI CSS ----------
+# ---------- Global UI CSS (neo-dark + glass) ----------
 
 APP_CSS = """
 <style>
 
-/* Light background */
+/* Global background */
 html, body, [data-testid="stAppViewContainer"] {
   background:
-    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.16), transparent 55%),
-    radial-gradient(circle at 100% 100%, rgba(244,114,182,0.14), transparent 55%),
-    #F9FAFB;
-  color: #111827;
+    radial-gradient(circle at 0% 0%, rgba(59,130,246,0.35), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(236,72,153,0.35), transparent 55%),
+    #020617;
+  color: #e5e7eb;
 }
 
 /* Main container */
 .main .block-container {
-  padding-top: 1.4rem;
-  padding-bottom: 1.5rem;
-  max-width: 1120px;
+  padding-top: 1.2rem;
+  padding-bottom: 1.6rem;
+  max-width: 1200px;
 }
 
-/* Sidebar */
+/* Sidebar shell */
 [data-testid="stSidebar"] {
   background: transparent;
 }
 
 section[data-testid="stSidebar"] > div {
-  background: #F9FAFB;
-  border-radius: 18px;
+  background: rgba(15,23,42,0.96);
+  backdrop-filter: blur(18px);
+  border-radius: 20px;
   margin: 0.9rem 0.4rem 0.9rem 0.2rem;
   padding: 1.0rem 0.95rem 1.2rem 0.95rem;
-  border: 1px solid rgba(209,213,219,0.9);
-  box-shadow: 0 14px 32px rgba(15,23,42,0.12);
+  border: 1px solid rgba(148,163,184,0.5);
+  box-shadow:
+    0 18px 45px rgba(15,23,42,0.65),
+    0 0 0 1px rgba(15,23,42,0.85);
 }
 
 section[data-testid="stSidebar"] {
-  color: #111827;
+  color: #e5e7eb;
 }
 
 /* File uploader */
 [data-testid="stFileUploaderDropzone"] {
-  background-color: #FFFFFF !important;
+  background: rgba(15,23,42,0.96) !important;
   border-radius: 16px !important;
-  border: 1px dashed #CBD5E1 !important;
-  color: #111827 !important;
+  border: 1px dashed rgba(148,163,184,0.85) !important;
+  color: #e5e7eb !important;
 }
 
 [data-testid="stFileUploaderDropzone"] * {
-  color: #111827 !important;
+  color: #e5e7eb !important;
 }
 
-/* Main glass card */
+/* Main shell */
 .glass-shell {
-  background: #FFFFFF;
-  border-radius: 20px;
-  padding: 1.3rem 1.5rem 1.5rem 1.5rem;
-  border: 1px solid rgba(209,213,219,0.95);
+  background: radial-gradient(circle at 0 0, rgba(56,189,248,0.18), transparent 55%),
+              radial-gradient(circle at 100% 100%, rgba(251,113,133,0.18), transparent 55%),
+              rgba(15,23,42,0.92);
+  backdrop-filter: blur(18px);
+  border-radius: 26px;
+  padding: 1.4rem 1.6rem 1.6rem 1.6rem;
+  border: 1px solid rgba(148,163,184,0.7);
   box-shadow:
-    0 18px 45px rgba(15,23,42,0.10),
-    0 0 0 1px rgba(148,163,184,0.35);
+    0 26px 70px rgba(15,23,42,0.95),
+    0 0 0 1px rgba(15,23,42,0.85);
 }
 
-/* Ribbon */
-.ribbon-bar {
-  background: linear-gradient(90deg, #4f46e5, #ec4899);
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  display: inline-flex;
-  gap: 0.45rem;
-  align-items: center;
-  color: #F9FAFB;
-  font-size: 0.80rem;
-  box-shadow: 0 10px 25px rgba(79,70,229,0.55);
-}
-
-.ribbon-chip {
-  background: rgba(15,23,42,0.10);
-  padding: 0.13rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(248,250,252,0.35);
+/* Top badge row */
+.hero-kicker {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
 }
 
 /* Headings */
 h1 {
-  font-size: 2.2rem;
-  letter-spacing: 0.04em;
-  color: #111827;
+  font-size: 2.1rem;
+  letter-spacing: 0.02em;
+  color: #f9fafb;
 }
 
 h2, h3 {
-  color: #111827;
+  color: #e5e7eb;
+}
+
+/* Stat cards */
+.metric-card {
+  padding: 0.7rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(15,23,42,0.95);
+  border: 1px solid rgba(55,65,81,0.9);
+  box-shadow: 0 16px 40px rgba(15,23,42,0.85);
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.metric-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+/* Quick action pills */
+.qa-pill {
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid rgba(148,163,184,0.85);
+  background: linear-gradient(135deg, rgba(15,23,42,1), rgba(30,64,175,0.85));
+  color: #e5e7eb;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.85);
+}
+
+/* Tabs */
+[data-baseweb="tab-list"] {
+  gap: 0.4rem;
+}
+button[role="tab"] {
+  border-radius: 999px !important;
 }
 
 /* Chat bubbles */
 div[data-testid="stChatMessage"][data-testid*="user"] {
-  background: #111827;
-  color: #F9FAFB;
-  border-radius: 14px;
+  background: linear-gradient(135deg, #4f46e5, #ec4899);
+  color: #f9fafb;
+  border-radius: 16px;
   border: none;
 }
 
 div[data-testid="stChatMessage"][data-testid*="assistant"] {
-  background: #F3F4F6;
-  color: #111827;
-  border-radius: 14px;
-  border: 1px solid rgba(209,213,219,0.9);
+  background: rgba(15,23,42,0.95);
+  color: #e5e7eb;
+  border-radius: 16px;
+  border: 1px solid rgba(55,65,81,0.9);
 }
 
 /* Chat input */
 .stChatInputContainer {
   background: transparent;
-  padding-top: 0.6rem;
+  padding-top: 0.4rem;
 }
 
 div[data-testid="stChatInput"] textarea {
-  background: #FFFFFF;
-  border-radius: 12px;
-  border: 1px solid rgba(209,213,219,0.9);
+  background: rgba(15,23,42,0.98);
+  border-radius: 14px;
+  border: 1px solid rgba(55,65,81,0.95);
   padding: 0.75rem 0.9rem;
-  color: #111827;
-  box-shadow: 0 12px 30px rgba(15,23,42,0.10);
+  color: #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15,23,42,0.95);
 }
 
 div[data-testid="stChatInput"] textarea:focus {
   outline: none;
-  border-color: #4F46E5;
-  box-shadow: 0 0 0 1px rgba(79,70,229,0.85), 0 16px 36px rgba(79,70,229,0.25);
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 1px rgba(79,70,229,1),
+    0 18px 46px rgba(55,65,81,1);
 }
 
 /* Sidebar buttons */
 section[data-testid="stSidebar"] button {
-  color: #111827 !important;
-  background-color: #FFFFFF !important;
+  color: #e5e7eb !important;
+  background-color: rgba(15,23,42,0.98) !important;
   border-radius: 999px !important;
-  border: 1px solid #E5E7EB !important;
+  border: 1px solid rgba(75,85,99,0.95) !important;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
-  box-shadow: 0 10px 24px rgba(148,163,184,0.35);
+  box-shadow: 0 16px 36px rgba(15,23,42,0.9);
   transition: all 0.12s ease-out;
 }
 
 section[data-testid="stSidebar"] button:not(:disabled):hover {
-  background-color: #EEF2FF !important;
-  border-color: #4F46E5 !important;
-  color: #111827 !important;
+  background-color: rgba(37,99,235,0.95) !important;
+  border-color: rgba(129,140,248,1) !important;
+  color: #f9fafb !important;
   transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(148,163,184,0.55);
+  box-shadow: 0 20px 48px rgba(30,64,175,1);
 }
 
 section[data-testid="stSidebar"] button:disabled {
-  background-color: #F3F4F6 !important;
-  color: #9CA3AF !important;
-  border: 1px solid #E5E7EB !important;
+  background-color: rgba(31,41,55,0.98) !important;
+  color: #6b7280 !important;
+  border: 1px solid rgba(55,65,81,0.95) !important;
   box-shadow: none !important;
 }
 
@@ -172,17 +215,18 @@ section[data-testid="stSidebar"] button:disabled {
     display: inline-block;
     padding: 0.15rem 0.55rem;
     border-radius: 6px;
-    background: #111827;
-    color: #F9FAFB;
+    background: rgba(15,23,42,0.98);
+    color: #e5e7eb;
     font-size: 0.68rem;
     margin-right: 0.25rem;
     margin-top: 0.18rem;
+    border: 1px solid rgba(55,65,81,0.95);
 }
 
 /* Lists */
 ul.custom-list {
   padding-left: 1.1rem;
-  color: #374151;
+  color: #d1d5db;
 }
 
 ul.custom-list li {
@@ -191,10 +235,10 @@ ul.custom-list li {
 
 /* Info alerts */
 div.stAlert {
-  background-color: #E5ECFF;
-  color: #111827;
+  background-color: rgba(30,64,175,0.18);
+  color: #e5e7eb;
   border-radius: 12px;
-  border: 1px solid #C7D2FE;
+  border: 1px solid rgba(129,140,248,0.9);
 }
 
 </style>
@@ -220,7 +264,7 @@ rag: RAGEngine = st.session_state.rag
 # ---------- Sidebar: upload & controls ----------
 
 with st.sidebar:
-    st.markdown("#### Upload CV / documents")
+    st.markdown("#### 📂 Upload CV / Docs")
     uploaded_files = st.file_uploader(
         "PDF / TXT",
         type=["pdf", "txt"],
@@ -250,7 +294,7 @@ with st.sidebar:
             file_paths.append(save_path)
 
     st.markdown("---")
-    st.markdown("#### Job Description (optional)")
+    st.markdown("#### 📄 Job Description (optional)")
     jd_file = st.file_uploader(
         "JD PDF / TXT", type=["pdf", "txt"], key="jd_uploader"
     )
@@ -263,315 +307,296 @@ with st.sidebar:
 
     st.markdown("---")
 
-    if st.button("Index documents", use_container_width=True):
+    if st.button("⚙️ Index documents", use_container_width=True):
         if not file_paths and not os.path.exists("sample.txt"):
             st.error("Please upload at least one document or load the sample.")
         else:
             if not file_paths and os.path.exists("sample.txt"):
                 file_paths = ["sample.txt"]
 
-            with st.spinner("Indexing documents with embeddings & FAISS..."):
+            with st.spinner("Building embeddings index..."):
                 try:
                     num_files, num_chunks = rag.build_index(file_paths)
                     st.session_state.index_built = True
                     st.session_state.last_files = file_paths
                     st.session_state.chunks_count = num_chunks
                     st.success(
-                        f"Indexed {num_files} files into {num_chunks} text chunks."
+                        f"Indexed {num_files} file(s) into {num_chunks} text chunks."
                     )
                 except Exception as e:
                     st.session_state.index_built = False
                     st.error(f"Error while indexing: {e}")
 
-    if st.button("Clear chat history", use_container_width=True):
+    if st.button("🧹 Clear chat", use_container_width=True):
         st.session_state.chat_history = []
         st.session_state.questions_count = 0
         st.experimental_rerun()
 
     st.markdown("---")
-    st.markdown("#### LLM status")
+    st.markdown("#### 🤖 LLM status")
     if getattr(rag, "model", None) is None:
         st.caption("LLM not configured → bot returns the most relevant snippets only.")
     else:
-        st.caption("Gemini configured → bot generates natural answers grounded in your docs.")
+        st.caption("Gemini configured → bot generates grounded, natural answers.")
 
 
 # ---------- Header ----------
 
 st.markdown(
     """
-<div style="margin-bottom:0.6rem;">
-  <div style="font-size:0.78rem; letter-spacing:0.18em; color:#6B7280; text-transform:uppercase; margin-bottom:0.25rem;">
-    AHMED GAITER · RAG SUITE
-  </div>
+<div class="hero-kicker">
+  RAG · TALENT & DOCUMENTS ASSISTANT
 </div>
 """,
     unsafe_allow_html=True,
 )
 
-
-# ---------- Main glass card ----------
 
 st.markdown("<div class='glass-shell'>", unsafe_allow_html=True)
 
-st.markdown(
-    """
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-  <div>
-    <h1 style="margin:0;">RAG Chat Bot</h1>
-    <p style="margin:0.25rem 0 0; font-size:0.93rem; max-width:520px;">
-      Chat interface for your CVs and documents. Upload, index, and query your knowledge base with a clean, product-ready dashboard UI.
-    </p>
-  </div>
-  <div class="ribbon-bar">
-    <span>RAG PIPELINE</span>
-    <span class="ribbon-chip">Upload</span>
-    <span class="ribbon-chip">Index</span>
-    <span class="ribbon-chip">Query</span>
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
+col_header_left, col_header_right = st.columns([3, 1], gap="large")
 
-
-# ---------- Dynamic stats cards ----------
-
-stats_col1, stats_col2, stats_col3 = st.columns(3)
-
-with stats_col1:
+with col_header_left:
+    st.markdown("## 💼 RAG Talent & Docs Assistant")
     st.markdown(
-        f"""
-    <div style="
-        padding:0.7rem 0.9rem;
-        border-radius:14px;
-        background:rgba(255,255,255,0.85);
-        border:1px solid #E5E7EB;
-        box-shadow:0 10px 24px rgba(148,163,184,0.35);
-        ">
-        <div style="font-size:0.78rem;color:#6B7280;">FILES</div>
-        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
-            {len(st.session_state.last_files) if st.session_state.last_files else 0}
-        </div>
-    </div>
-    """,
-        unsafe_allow_html=True,
+        "Turn CVs and documents into an interactive, AI‑powered knowledge base. "
+        "Upload resumes, manuals, or PDFs and chat with them like a real assistant."
     )
 
-with stats_col2:
+with col_header_right:
     st.markdown(
-        f"""
-    <div style="
-        padding:0.7rem 0.9rem;
-        border-radius:14px;
-        background:rgba(255,255,255,0.85);
-        border:1px solid #E5E7EB;
-        box-shadow:0 10px 24px rgba(148,163,184,0.35);
-        ">
-        <div style="font-size:0.78rem;color:#6B7280;">CHUNKS</div>
-        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
-            {st.session_state.chunks_count}
-        </div>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-with stats_col3:
-    st.markdown(
-        f"""
-    <div style="
-        padding:0.7rem 0.9rem;
-        border-radius:14px;
-        background:rgba(255,255,255,0.85);
-        border:1px solid #E5E7EB;
-        box-shadow:0 10px 24px rgba(148,163,184,0.35);
-        ">
-        <div style="font-size:0.78rem;color:#6B7280;">QUESTIONS</div>
-        <div style="font-size:1.1rem;font-weight:600;color:#111827;">
-            {st.session_state.questions_count}
-        </div>
+        """
+    <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:flex-end;">
+      <div style="
+        padding:0.3rem 0.8rem;
+        border-radius:999px;
+        background:linear-gradient(135deg,#22c55e,#16a34a);
+        color:#ecfdf5;
+        font-size:0.75rem;
+        box-shadow:0 12px 32px rgba(22,163,74,0.9);
+      ">
+        LIVE · DEMO READY
+      </div>
+      <div style="
+        padding:0.25rem 0.75rem;
+        border-radius:999px;
+        border:1px solid rgba(148,163,184,0.85);
+        background:rgba(15,23,42,0.96);
+        font-size:0.72rem;
+        color:#e5e7eb;
+      ">
+        Designed by Ahmed Gaiter
+      </div>
     </div>
     """,
         unsafe_allow_html=True,
     )
 
 
-# ---------- Quick Actions (CV / Docs) ----------
+# ---------- Metrics row ----------
+
+m1, m2, m3 = st.columns(3)
+
+with m1:
+    st.markdown(
+        f"""
+    <div class="metric-card">
+      <div class="metric-label">Files indexed</div>
+      <div class="metric-value">{len(st.session_state.last_files) if st.session_state.last_files else 0}</div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+with m2:
+    st.markdown(
+        f"""
+    <div class="metric-card">
+      <div class="metric-label">Chunks</div>
+      <div class="metric-value">{st.session_state.chunks_count}</div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+with m3:
+    st.markdown(
+        f"""
+    <div class="metric-card">
+      <div class="metric-label">Questions this session</div>
+      <div class="metric-value">{st.session_state.questions_count}</div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+# ---------- Tabs ----------
+
+tab_chat, tab_insights, tab_help = st.tabs(["💬 Chat", "📊 Insights", "ℹ️ How it works"])
 
 quick_question = None
 
-if st.session_state.index_built and st.session_state.last_files:
-    qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
-    with qa_col1:
-        if st.button("CV Summary", use_container_width=True):
-            quick_question = "Summarize this CV in 4 concise bullet points."
-    with qa_col2:
-        if st.button("Technical skills", use_container_width=True):
-            quick_question = (
-                "List the main technical skills mentioned in this CV or document."
-            )
-    with qa_col3:
-        if st.button("Certifications", use_container_width=True):
-            quick_question = "What certifications and courses are mentioned?"
-    with qa_col4:
-        if st.button("Experience overview", use_container_width=True):
-            quick_question = (
-                "Summarize the professional experience section in this CV."
-            )
+with tab_chat:
+    # Quick actions row
+    if st.session_state.index_built and st.session_state.last_files:
+        qa_c1, qa_c2, qa_c3, qa_c4 = st.columns(4)
+        with qa_c1:
+            if st.button("📄 CV summary", use_container_width=True):
+                quick_question = "Summarize this CV in 4 concise bullet points."
+        with qa_c2:
+            if st.button("🧠 Technical skills", use_container_width=True):
+                quick_question = (
+                    "List the main technical skills mentioned in this CV or document."
+                )
+        with qa_c3:
+            if st.button("🎓 Certifications", use_container_width=True):
+                quick_question = "What certifications and courses are mentioned?"
+        with qa_c4:
+            if st.button("🧾 Experience overview", use_container_width=True):
+                quick_question = (
+                    "Summarize the professional experience section in this CV."
+                )
 
+    left_col, right_col = st.columns([2.2, 1], gap="large")
 
-# ---------- Layout: chat + right panel ----------
+    # ---------- Left: chat ----------
 
-left_col, right_col = st.columns([2.2, 1], gap="large")
+    with left_col:
+        st.subheader("Chat console")
 
-
-# ---------- Left column: chat ----------
-
-with left_col:
-    st.subheader("CHAT · CONSOLE")
-
-    if not st.session_state.index_built:
-        st.info("Please upload and index documents first from the sidebar.")
-    else:
-        # Show history
-        for msg in st.session_state.chat_history:
-            with st.chat_message(
-                msg["role"],
-                avatar="🤖" if msg["role"] == "assistant" else "🧑",
-            ):
-                st.markdown(msg["content"])
-
-        # Quick action question or user input
-        user_input = quick_question or st.chat_input(
-            "Ask a question about your documents..."
-        )
-
-        if user_input:
-            st.session_state.questions_count += 1
-            st.session_state.chat_history.append(
-                {"role": "user", "content": user_input}
-            )
-
-            with st.chat_message("user", avatar="🧑"):
-                st.markdown(user_input)
-
-            with st.chat_message("assistant", avatar="🤖"):
-                with st.spinner(
-                    "Retrieving relevant chunks and generating answer..."
+        if not st.session_state.index_built:
+            st.info("Upload and index at least one document from the sidebar to start.")
+        else:
+            for msg in st.session_state.chat_history:
+                with st.chat_message(
+                    msg["role"],
+                    avatar="🤖" if msg["role"] == "assistant" else "🧑",
                 ):
-                    answer, retrieved = rag.answer(user_input)
+                    st.markdown(msg["content"])
 
-                st.markdown(answer)
+            user_input = quick_question or st.chat_input(
+                "Ask a question about your CVs or documents..."
+            )
 
-                if retrieved:
-                    st.markdown("")
-                    st.markdown("**Sources**")
-                    for i, ch in enumerate(retrieved, start=1):
-                        st.markdown(
-                            f"<span class='source-badge'>[{i}] {ch.source}</span>",
-                            unsafe_allow_html=True,
-                        )
+            if user_input:
+                st.session_state.questions_count += 1
+                st.session_state.chat_history.append(
+                    {"role": "user", "content": user_input}
+                )
+
+                with st.chat_message("user", avatar="🧑"):
+                    st.markdown(user_input)
+
+                with st.chat_message("assistant", avatar="🤖"):
+                    with st.spinner(
+                        "Retrieving relevant chunks and generating answer..."
+                    ):
+                        answer, retrieved = rag.answer(user_input)
+
+                    st.markdown(answer)
+
+                    if retrieved:
+                        st.markdown("")
+                        st.markdown("**Sources**")
+                        for i, ch in enumerate(retrieved, start=1):
+                            st.markdown(
+                                f"<span class='source-badge'>[{i}] {ch.source}</span>",
+                                unsafe_allow_html=True,
+                            )
+
+    # ---------- Right: analysis + export ----------
+
+    with right_col:
+        st.subheader("CV · JD analysis")
+
+        cv_available = (
+            st.session_state.last_files
+            and len(st.session_state.last_files) == 1
+            and st.session_state.index_built
+        )
+        jd_available = st.session_state.jd_path is not None
+
+        if st.button(
+            "🔍 Analyze CV vs JD",
+            use_container_width=True,
+            disabled=not (cv_available and jd_available),
+        ):
+            cv_path = st.session_state.last_files[0]
+            with st.spinner("Analyzing CV against Job Description..."):
+                analysis_text = rag.analyze_cv_vs_jd(cv_path, st.session_state.jd_path)
+            st.markdown(analysis_text)
+
+        if not (cv_available and jd_available):
+            st.caption(
+                "Upload exactly one CV and one Job Description to enable CV vs JD analysis."
+            )
+
+        st.markdown("---")
+        st.subheader("Export report")
+
+        if st.session_state.chat_history:
+            report_lines = []
+            for msg in st.session_state.chat_history:
+                prefix = "User" if msg["role"] == "user" else "Assistant"
+                report_lines.append(f"{prefix}: {msg['content']}")
+                report_lines.append("")
+            report_text = "\n".join(report_lines)
+
+            st.download_button(
+                "⬇️ Download chat report",
+                data=report_text,
+                file_name="chat_report.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        else:
+            st.caption("Start a chat to enable report export.")
 
 
-# ---------- Right column: session info + explorer + analysis ----------
+# ---------- Insights tab ----------
 
-with right_col:
-    st.subheader("SESSION · STATUS")
+with tab_insights:
+    st.subheader("Session insights")
 
     if st.session_state.index_built and st.session_state.last_files:
-        st.markdown(f"- **Files indexed:** {len(st.session_state.last_files)}")
-        st.markdown("- **Vector index:** FAISS (L2 distance)")
-        st.markdown(f"- **Chunks:** {st.session_state.chunks_count}")
-    else:
-        st.markdown("- **Files indexed:** 0")
-        st.markdown("- **Vector index:** not built yet")
-
-    st.markdown("---")
-    st.subheader("DOCUMENTS · EXPLORER")
-
-    if st.session_state.last_files:
+        st.markdown("**Indexed documents**")
         for fp in st.session_state.last_files:
             name = os.path.basename(fp)
             st.markdown(f"- {name}")
+
+        if st.session_state.jd_path:
+            st.markdown(f"- Job Description: {os.path.basename(st.session_state.jd_path)}")
     else:
-        st.markdown("_No documents indexed yet._")
-
-    if st.session_state.jd_path:
-        st.markdown(f"- JD: {os.path.basename(st.session_state.jd_path)}")
+        st.info("No indexed documents yet. Upload and index files from the sidebar.")
 
     st.markdown("---")
-    st.subheader("CV · JD ANALYSIS")
-
-    cv_available = (
-        st.session_state.last_files
-        and len(st.session_state.last_files) == 1
-        and st.session_state.index_built
+    st.markdown("**Engine summary**")
+    st.markdown(
+        """
+- Retrieval: FAISS vector index on sentence-transformers embeddings.
+- Generation: Gemini (if configured) with RAG grounding.
+- Use cases: CV analysis, CV vs JD matching, document Q&A.
+"""
     )
-    jd_available = st.session_state.jd_path is not None
 
-    if st.button(
-        "Analyze CV vs JD",
-        use_container_width=True,
-        disabled=not (cv_available and jd_available),
-    ):
-        cv_path = st.session_state.last_files[0]
-        with st.spinner("Analyzing CV against Job Description..."):
-            analysis_text = rag.analyze_cv_vs_jd(cv_path, st.session_state.jd_path)
-        st.markdown(analysis_text)
 
-    if not (cv_available and jd_available):
-        st.caption(
-            "Upload a single CV and one Job Description to enable CV vs JD analysis."
-        )
+# ---------- Help / How it works tab ----------
 
-    st.markdown("---")
-    st.subheader("FLOW · PIPELINE")
+with tab_help:
+    st.subheader("How this assistant works")
+
     st.markdown(
         """
 <ul class="custom-list">
-<li>Upload one or more PDF/TXT files from the sidebar.</li>
-<li>Optionally upload a Job Description for CV matching.</li>
-<li>Click <b>Index documents</b> to build the vector index with embeddings.</li>
-<li>Use quick actions or ask questions in the chat console on the left.</li>
-<li>The engine retrieves the most relevant chunks and calls Gemini to answer.</li>
+<li>Upload one or more PDF/TXT files (CVs, manuals, reports) from the sidebar.</li>
+<li>Optionally upload a Job Description to enable CV vs JD matching.</li>
+<li>Click <b>Index documents</b> to build an embeddings-based vector index (FAISS).</li>
+<li>Use quick action buttons (CV summary, skills, certifications) or ask your own questions.</li>
+<li>The engine retrieves the most relevant chunks and calls Gemini to generate grounded answers.</li>
+<li>You can export a full chat transcript as a text report from the Chat tab.</li>
 </ul>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-    st.subheader("EXPORT · REPORT")
-
-    if st.session_state.chat_history:
-        report_lines = []
-        for msg in st.session_state.chat_history:
-            prefix = "User" if msg["role"] == "user" else "Assistant"
-            report_lines.append(f"{prefix}: {msg['content']}")
-            report_lines.append("")
-        report_text = "\n".join(report_lines)
-
-        st.download_button(
-            "Download chat report",
-            data=report_text,
-            file_name="chat_report.txt",
-            mime="text/plain",
-            use_container_width=True,
-        )
-    else:
-        st.caption("Start a chat to enable report export.")
-
-    st.markdown("---")
-    st.subheader("USAGE · NOTES")
-    st.markdown(
-        """
-<ul class="custom-list">
-<li>Use clear questions like <i>"Summarize this CV"</i> or <i>"What are the key technical skills?"</i>.</li>
-<li>Upload a Job Description to get a CV vs JD match analysis.</li>
-<li>In production, this interface can be connected to company or client documentation as a branded assistant.</li>
-</ul>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
