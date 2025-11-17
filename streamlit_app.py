@@ -11,6 +11,7 @@ from rag_engine import RAGEngine
 LIGHT_CSS = """
 <style>
 
+/* خلفية فاتحة هلامية */
 html, body, [data-testid="stAppViewContainer"] {
   background:
     radial-gradient(circle at 0% 0%, rgba(129,140,248,0.16), transparent 55%),
@@ -19,47 +20,31 @@ html, body, [data-testid="stAppViewContainer"] {
   color: #111827;
 }
 
-/* container */
+/* حاوية رئيسية */
 .main .block-container {
   padding-top: 1.4rem;
   padding-bottom: 1.5rem;
   max-width: 1120px;
 }
 
-/* Sidebar */
+/* Sidebar Light */
 [data-testid="stSidebar"] {
   background: transparent;
 }
 
-/* Sidebar buttons (light) */
-section[data-testid="stSidebar"] button {
-  color: #111827;                     /* نص غامق وواضح */
-  background-color: #E5E7EB;          /* رمادي فاتح */
-  border-radius: 10px;
-  border: 1px solid #CBD5E1;          /* حافة خفيفة */
-  padding: 0.45rem 0.2rem;
-  font-weight: 600;
-  box-shadow: 0 6px 16px rgba(15,23,42,0.18);
-  transition: all 0.12s ease-out;
+section[data-testid="stSidebar"] > div {
+  background: #F9FAFB;
+  border-radius: 18px;
+  margin: 0.9rem 0.4rem 0.9rem 0.2rem;
+  padding: 1.0rem 0.95rem 1.2rem 0.95rem;
+  border: 1px solid rgba(209,213,219,0.9);
+  box-shadow: 0 14px 32px rgba(15,23,42,0.12);
 }
 
-/* Hover في light */
-section[data-testid="stSidebar"] button:not(:disabled):hover {
-  background-color: #EEF2FF;
-  border-color: #4F46E5;
+/* كل النصوص داخل السايدبار (ومنها Dark mode) تكون غامقة وواضحة */
+section[data-testid="stSidebar"] {
   color: #111827;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(15,23,42,0.25);
 }
-
-/* Disabled state في light */
-section[data-testid="stSidebar"] button:disabled {
-  background-color: #E5E7EB;
-  color: #9CA3AF;
-  border: 1px solid #CBD5E1;
-  box-shadow: none;
-}
-
 
 /* Main card */
 .glass-shell {
@@ -92,7 +77,7 @@ section[data-testid="stSidebar"] button:disabled {
   border: 1px solid rgba(248,250,252,0.35);
 }
 
-/* Text */
+/* عناوين */
 h1 {
   font-size: 2.2rem;
   letter-spacing: 0.04em;
@@ -103,7 +88,7 @@ h2, h3 {
   color: #111827;
 }
 
-/* Chat bubbles */
+/* فقاعات الشات */
 div[data-testid="stChatMessage"][data-testid*="user"] {
   background: #111827;
   color: #F9FAFB;
@@ -118,7 +103,7 @@ div[data-testid="stChatMessage"][data-testid*="assistant"] {
   border: 1px solid rgba(209,213,219,0.9);
 }
 
-/* Chat input */
+/* إدخال الشات */
 .stChatInputContainer {
   background: transparent;
   padding-top: 0.6rem;
@@ -139,32 +124,36 @@ div[data-testid="stChatInput"] textarea:focus {
   box-shadow: 0 0 0 1px rgba(79,70,229,0.85), 0 16px 36px rgba(79,70,229,0.25);
 }
 
-/* Sidebar buttons (light) */
+/* أزرار السايدبار في Light → بيضاء هلامية */
 section[data-testid="stSidebar"] button {
-  color: #F9FAFB;
-  background-color: #111827;
-  border-radius: 10px;
-  border: 0;
+  color: #111827;                    /* النص غامق */
+  background-color: #FFFFFF;         /* زر أبيض */
+  border-radius: 999px;
+  border: 1px solid #E5E7EB;
   padding: 0.45rem 0.2rem;
   font-weight: 600;
-  box-shadow: 0 8px 20px rgba(15,23,42,0.45);
+  box-shadow: 0 10px 24px rgba(148,163,184,0.35);
   transition: all 0.12s ease-out;
 }
 
+/* Hover في Light */
 section[data-testid="stSidebar"] button:not(:disabled):hover {
+  background-color: #EEF2FF;
+  border-color: #4F46E5;
+  color: #111827;
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(15,23,42,0.65);
+  box-shadow: 0 14px 30px rgba(148,163,184,0.55);
 }
 
-/* Disabled state */
+/* Disabled في Light */
 section[data-testid="stSidebar"] button:disabled {
-  background-color: #1F2933;
+  background-color: #F3F4F6;
   color: #9CA3AF;
-  border: 1px solid #4B5563;
+  border: 1px solid #E5E7EB;
   box-shadow: none;
 }
 
-/* Source badges */
+/* Badges للمصادر */
 .source-badge {
     display: inline-block;
     padding: 0.15rem 0.55rem;
@@ -176,7 +165,7 @@ section[data-testid="stSidebar"] button:disabled {
     margin-top: 0.18rem;
 }
 
-/* Lists */
+/* القوائم */
 ul.custom-list {
   padding-left: 1.1rem;
   color: #374151;
@@ -186,7 +175,7 @@ ul.custom-list li {
   margin-bottom: 0.22rem;
 }
 
-/* Info alert */
+/* رسائل info */
 div.stAlert {
   background-color: #E5ECFF;
   color: #111827;
@@ -196,6 +185,7 @@ div.stAlert {
 
 </style>
 """
+
 
 DARK_CSS = """
 <style>
@@ -581,4 +571,5 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 
