@@ -1,212 +1,168 @@
-# rag_engine.py
 import os
-import uuid
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
+import textwrap
+from typing import List, Tuple
 
-import numpy as np
+import google.generativeai as genai
 import faiss
-from sentence_transformers import SentenceTransformer
-from dotenv import load_dotenv
-from pypdf import PdfReader
+import numpy as np
 
-load_dotenv()
-
-
-@dataclass
-class DocumentChunk:
-    id: str
-    source: str
-    content: str
+# أي كلاس chunk عندك (عدّل الاسم لو مختلف)
+class RetrievedChunk:
+    def __init__(self, content: str, source: str):
+        self.content = content
+        self.source = source
 
 
 class RAGEngine:
-    """
-    Simple RAG engine:
-    - Load PDF/TXT files
-    - Split into chunks
-    - Build FAISS index with sentence-transformers embeddings
-    - Retrieve top-k chunks
-    - Optionally call OpenAI to generate an answer
-    """
-
-    def __init__(self):
-        # Model for embeddings
-        self.embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-        # Vector index + storage
-        self.index = None
-        self.chunks: List[DocumentChunk] = []
-
-        # Optional LLM via OpenAI
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        if self.openai_api_key:
-            from openai import OpenAI
-            self.llm_client = OpenAI(api_key=self.openai_api_key)
+    def __init__(self, embedding_dim: int = 768):
+        """
+        تهيئة محرك الـ RAG:
+        - تحميل/تهيئة موديل Gemini (لو فيه مفتاح).
+        - تحضير FAISS index.
+        """
+        # إعداد Gemini
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
         else:
-            self.llm_client = None
+            self.model = None
 
-    # ---------- Loading & chunking ----------
+        self.embedding_dim = embedding_dim
+        self.index = None
+        self.chunks: List[RetrievedChunk] = []
 
-    def load_txt(self, path: str) -> str:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            return f.read()
+    # --------- جزء الـ Embeddings (بديل بسيط) --------- #
 
-    def load_pdf(self, path: str) -> str:
-        reader = PdfReader(path)
-        texts = []
-        for page in reader.pages:
-            texts.append(page.extract_text() or "")
-        return "\n".join(texts)
+    def _embed_text(self, texts: List[str]) -> np.ndarray:
+        """
+        دالة بسيطة لإنتاج embeddings.
+        لو عندك موديل جاهز (مثلاً from sentence_transformers) استخدمه هنا.
+        مؤقتًا هنستخدم تمثيل عددي بسيط عشان الديمو.
+        """
+        # WARNING: لمشروع production استخدم موديل حقيقي للـ embeddings.
+        vectors = []
+        for t in texts:
+            arr = np.zeros(self.embedding_dim, dtype="float32")
+            for i, ch in enumerate(t.encode("utf-8")[: self.embedding_dim]):
+                arr[i] = float(ch) / 255.0
+            vectors.append(arr)
+        return np.vstack(vectors)
 
-    def load_documents(self, paths: List[str]) -> str:
-        """Return full combined text (for stats)"""
-        combined = []
-        for p in paths:
-            ext = os.path.splitext(p)[1].lower()
-            try:
-                if ext == ".txt":
-                    combined.append(self.load_txt(p))
-                elif ext == ".pdf":
-                    combined.append(self.load_pdf(p))
-            except Exception as e:
-                print(f"Error loading {p}: {e}")
-        return "\n".join(combined)
-
-    def _split_text(self, text: str, chunk_size: int = 700, overlap: int = 150) -> List[str]:
-        """Simple recursive splitter based on characters."""
-        text = text.replace("\r", " ").replace("\n\n", "\n")
-        chunks = []
-        start = 0
-        length = len(text)
-
-        while start < length:
-            end = min(start + chunk_size, length)
-            chunk = text[start:end]
-
-            # try to cut at last period
-            last_period = chunk.rfind(".")
-            if last_period != -1 and end != length:
-                end = start + last_period + 1
-                chunk = text[start:end]
-
-            chunks.append(chunk.strip())
-            start = max(end - overlap, end)
-
-        return [c for c in chunks if c]
+    # --------- بناء الـ index --------- #
 
     def build_index(self, file_paths: List[str]) -> Tuple[int, int]:
-        """Load docs, split to chunks, embed, and build FAISS index."""
-        self.chunks = []
-        all_text = ""
+        """
+        يقسّم الملفات إلى مقاطع، يبني FAISS index.
+        يرجع: (عدد الملفات, عدد المقاطع).
+        """
+        all_chunks: List[RetrievedChunk] = []
 
         for path in file_paths:
-            ext = os.path.splitext(path)[1].lower()
-            if ext not in [".pdf", ".txt"]:
+            if not os.path.exists(path):
                 continue
 
-            try:
-                if ext == ".pdf":
-                    content = self.load_pdf(path)
-                else:
-                    content = self.load_txt(path)
-            except Exception as e:
-                print(f"Error reading {path}: {e}")
-                continue
+            # هنا نفترض ملفات نص عادي؛ لو PDF عندك logic تاني مسبقًا
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                text = f.read()
 
-            all_text += content + "\n"
-            split_chunks = self._split_text(content)
+            # تقسيم بسيط كل 400 كلمة مثلاً
+            words = text.split()
+            chunk_size = 400
+            for i in range(0, len(words), chunk_size):
+                chunk_words = words[i : i + chunk_size]
+                content = " ".join(chunk_words).strip()
+                if content:
+                    all_chunks.append(RetrievedChunk(content=content, source=os.path.basename(path)))
 
-            for c in split_chunks:
-                self.chunks.append(
-                    DocumentChunk(
-                        id=str(uuid.uuid4()),
-                        source=os.path.basename(path),
-                        content=c,
-                    )
-                )
+        if not all_chunks:
+            self.index = None
+            self.chunks = []
+            return len(file_paths), 0
 
-        if not self.chunks:
-            raise ValueError("No chunks created from the provided documents.")
+        # بناء embeddings
+        texts = [c.content for c in all_chunks]
+        embs = self._embed_text(texts)
 
-        # Embed all chunks
-        texts = [c.content for c in self.chunks]
-        embeddings = self.embed_model.encode(texts, show_progress_bar=False)
-        embeddings = np.asarray(embeddings).astype("float32")
+        # FAISS index
+        index = faiss.IndexFlatL2(self.embedding_dim)
+        index.add(embs)
 
-        # Build FAISS index
-        dim = embeddings.shape[1]
-        self.index = faiss.IndexFlatL2(dim)
-        self.index.add(embeddings)
+        self.index = index
+        self.chunks = all_chunks
 
-        return len(file_paths), len(self.chunks)
+        return len(file_paths), len(all_chunks)
 
-    # ---------- Retrieval & answer ----------
+    # --------- استرجاع المقاطع --------- #
 
-    def retrieve(self, query: str, k: int = 4) -> List[DocumentChunk]:
+    def _retrieve(self, query: str, top_k: int = 4) -> List[RetrievedChunk]:
+        """
+        يرجع أفضل top_k مقاطع من الـ index بناءً على تشابه embeddings.
+        """
         if self.index is None or not self.chunks:
-            raise ValueError("Index is not built yet.")
+            return []
 
-        q_emb = self.embed_model.encode([query]).astype("float32")
-        distances, indices = self.index.search(q_emb, k)
+        q_emb = self._embed_text([query])  # 1 x d
+        distances, indices = self.index.search(q_emb, top_k)
 
-        results = []
+        retrieved: List[RetrievedChunk] = []
         for idx in indices[0]:
             if 0 <= idx < len(self.chunks):
-                results.append(self.chunks[idx])
-        return results
+                retrieved.append(self.chunks[idx])
 
-    def _build_prompt(self, query: str, retrieved: List[DocumentChunk]) -> str:
-        context = "\n\n".join(
-            [f"[{i+1}] From {c.source}:\n{c.content}" for i, c in enumerate(retrieved)]
+        return retrieved
+
+    # --------- توليد الإجابة --------- #
+
+    def answer(self, query: str) -> Tuple[str, List[RetrievedChunk]]:
+        """
+        واجهة رئيسية يستدعيها streamlit_app:
+        ترجع (النص النهائي, قائمة المقاطع المستخدمة).
+        """
+        retrieved = self._retrieve(query)
+
+        # حالة عدم وجود أي مقاطع
+        if not retrieved:
+            return "لم أجد أي مقاطع مرتبطة بسؤالك في المستندات.", []
+
+        # لو مفيش موديل Gemini: رجّع snippets فقط
+        if self.model is None:
+            text = "هنا أهم المقاطع من مستنداتك المتعلقة بسؤالك:\n\n"
+            for i, ch in enumerate(retrieved, start=1):
+                text += f"[{i}] {ch.content}\n\n"
+            return text, retrieved
+
+        # إعداد سياق المقاطع
+        context_blocks = []
+        for i, ch in enumerate(retrieved, start=1):
+            context_blocks.append(f"[{i}] {ch.content}")
+        context_text = "\n\n".join(context_blocks)
+
+        prompt = textwrap.dedent(
+            f"""
+            أنت مساعد ذكي للإجابة عن الأسئلة اعتمادًا على المقاطع التالية من مستندات المستخدم.
+            استخدم المعلومات من المقاطع فقط، ولو المعلومة غير موجودة قل ذلك بوضوح.
+
+            سؤال المستخدم:
+            {query}
+
+            مقاطع من المستندات:
+            {context_text}
+
+            المطلوب:
+            - إجابة واضحة ومختصرة ومباشرة.
+            - لو فيه أكثر من نقطة مهمة، اعرضها في شكل نقاط مرقّمة.
+            - لا تذكر أرقام المقاطع في النص، فقط استخدمها داخليًا.
+            """
         )
 
-        prompt = f"""
-You are an AI assistant that answers questions based strictly on the provided context.
-If the answer is not clearly contained in the context, say you are not sure.
-
-Context:
-{context}
-
-Question: {query}
-
-Answer in a clear, concise paragraph and, if helpful, bullet points.
-Mention which source snippets you used like [1], [2] etc.
-"""
-        return prompt.strip()
-
-    def answer(self, query: str) -> Tuple[str, List[DocumentChunk]]:
-        """Return answer text and retrieved chunks."""
-        if self.index is None:
-            return "Please upload and index documents first.", []
-
-        retrieved = self.retrieve(query)
-
-        # If no LLM, fallback: show snippets only
-        if self.llm_client is None:
-            snippet_texts = "\n\n---\n\n".join(
-                [f"From {c.source}:\n{c.content}" for c in retrieved]
-            )
-            answer = (
-                "LLM API key is not configured, so here are the most relevant passages "
-                "from your documents:\n\n" + snippet_texts
-            )
-            return answer, retrieved
-
-        # With OpenAI LLM
-        prompt = self._build_prompt(query, retrieved)
-
         try:
-            response = self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a helpful RAG assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-            )
-            answer = response.choices[0].message.content
+            resp = self.model.generate_content(prompt)
+            answer_text = resp.text.strip() if resp and resp.text else "تعذر توليد إجابة من Gemini."
         except Exception as e:
-            answer = f"Error contacting LLM: {e}"
+            # fallback لو حصل خطأ في Gemini
+            answer_text = "تعذر الاتصال بـ Gemini، لذا أعرض لك المقاطع الأكثر صلة:\n\n"
+            for i, ch in enumerate(retrieved, start=1):
+                answer_text += f"[{i}] {ch.content}\n\n"
 
-        return answer, retrieved
+        return answer_text, retrieved
