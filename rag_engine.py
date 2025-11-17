@@ -18,16 +18,16 @@ class RetrievedChunk:
 class RAGEngine:
     def __init__(self, embedding_dim: int = 384):
         """
-        محرك RAG:
-        - يقرأ ملفات PDF و TXT.
-        - يبني FAISS index على Embeddings من SentenceTransformer.
-        - يستخدم Gemini للإجابة إن وُجد المفتاح.
+        RAG engine:
+        - Reads PDF and TXT files.
+        - Builds a FAISS index using sentence-transformers embeddings.
+        - Uses Gemini for answer generation when configured.
         """
-        # موديل الـ embeddings
+        # Embedding model
         self.embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         self.embedding_dim = embedding_dim
 
-        # إعداد Gemini
+        # Gemini configuration
         api_key = os.environ.get("GEMINI_API_KEY")
         if api_key:
             genai.configure(api_key=api_key)
@@ -38,7 +38,7 @@ class RAGEngine:
         self.index = None
         self.chunks: List[RetrievedChunk] = []
 
-    # ---------- قراءة الملفات ---------- #
+    # ---------- File reading ---------- #
 
     def _read_txt(self, path: str) -> str:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -68,7 +68,7 @@ class RAGEngine:
 
     def _embed_text(self, texts: List[str]) -> np.ndarray:
         """
-        يحوّل قائمة نصوص إلى مصفوفة Embeddings (n x d).
+        Convert a list of texts into an embeddings matrix (n x d).
         """
         embs = self.embed_model.encode(
             texts, convert_to_numpy=True, show_progress_bar=False
@@ -76,12 +76,12 @@ class RAGEngine:
         embs = embs.astype("float32")
         return embs
 
-    # ---------- بناء الـ index ---------- #
+    # ---------- Index building ---------- #
 
     def build_index(self, file_paths: List[str]) -> Tuple[int, int]:
         """
-        يقرأ الملفات، يقسّمها إلى مقاطع، يبني عليها FAISS index.
-        يرجع: (عدد الملفات, عدد المقاطع).
+        Read files, split them into chunks, and build a FAISS index.
+        Returns: (number_of_files, number_of_chunks).
         """
         all_chunks: List[RetrievedChunk] = []
 
@@ -93,12 +93,12 @@ class RAGEngine:
             if not raw_text.strip():
                 continue
 
-            # تنظيف نص
+            # Normalize text
             text = raw_text.replace("\r", "\n")
             text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
 
-            # تقسيم إلى مقاطع مع overlap بسيط
-            chunk_size = 500  # حروف
+            # Chunking with small overlap
+            chunk_size = 500  # characters
             overlap = 100
             start = 0
             while start < len(text):
@@ -128,7 +128,7 @@ class RAGEngine:
 
         return len(file_paths), len(all_chunks)
 
-    # ---------- استرجاع المقاطع ---------- #
+    # ---------- Retrieval ---------- #
 
     def _retrieve(self, query: str, top_k: int = 5) -> List[RetrievedChunk]:
         if self.index is None or not self.chunks:
@@ -144,16 +144,24 @@ class RAGEngine:
 
         return retrieved
 
-    # ---------- توليد الإجابة العامة ---------- #
+    # ---------- Generic QA ---------- #
 
     def answer(self, query: str) -> Tuple[str, List[RetrievedChunk]]:
+        """
+        Main QA entrypoint used by the Streamlit app.
+        Returns (answer_text, retrieved_chunks).
+        """
         retrieved = self._retrieve(query)
 
         if not retrieved:
-            return "لم أجد أي مقاطع مرتبطة بسؤالك في المستندات.", []
+            return (
+                "No relevant passages were found in your documents for this question.",
+                [],
+            )
 
+        # No LLM: just return snippets
         if self.model is None:
-            text = "هنا أهم المقاطع من مستنداتك المتعلقة بسؤالك:\n\n"
+            text = "Here are the most relevant passages from your documents:\n\n"
             for i, ch in enumerate(retrieved, start=1):
                 text += f"[{i}] {ch.content}\n\n"
             return text, retrieved
@@ -165,58 +173,69 @@ class RAGEngine:
 
         prompt = textwrap.dedent(
             f"""
-            أنت مساعد ذكاء اصطناعي يجيب عن أسئلة المستخدم بالاعتماد على المقاطع التالية من المستندات.
+            You are an AI assistant that answers questions based only on the passages below.
 
-            سؤال المستخدم:
+            User question:
             {query}
 
-            المقاطع المسترجعة:
+            Retrieved passages:
             {context_text}
 
-            التعليمات:
-            - استخدم المعلومات الواضحة في المقاطع بشكل أساسي، ويمكنك الاستنتاج المنطقي البسيط عند الحاجة.
-            - لو السؤال عن سيرة ذاتية (CV)، يمكنك استخراج:
-              * الملخص المهني.
-              * الوظائف، المسمّى الوظيفي، الشركات، والتواريخ.
-              * المهارات التقنية.
-              * الشهادات.
-            - لا تقل إن المعلومات غير موجودة إلا إذا لم تجد أي شيء متعلق بالسؤال في المقاطع.
-            - أجب باللغة نفسها التي استخدمها المستخدم (عربي أو إنجليزي).
-            - اجعل الإجابة قصيرة وواضحة، ويمكنك استخدام نقاط مرقّمة عند الحاجة.
+            Instructions:
+            - Use the information in the passages as your primary source.
+            - You may use light logical inference, but do not hallucinate facts not supported by the text.
+            - If the question is about a CV (resume), you may extract:
+              * Professional summary.
+              * Roles, job titles, companies, and dates.
+              * Technical skills.
+              * Certifications.
+            - Only say that information is not available if there is truly nothing related to the question.
+            - Answer in the same language used by the user (Arabic or English).
+            - Keep the answer clear and concise, and use numbered or bulleted lists when helpful.
             """
         )
 
         try:
             resp = self.model.generate_content(prompt)
-            answer_text = resp.text.strip() if resp and resp.text else "تعذر توليد إجابة من Gemini."
+            answer_text = resp.text.strip() if resp and resp.text else (
+                "Gemini did not return any content."
+            )
         except Exception:
-            answer_text = "تعذر الاتصال بـ Gemini، لذا أعرض لك المقاطع الأكثر صلة:\n\n"
+            answer_text = (
+                "Could not reach Gemini, so here are the most relevant passages instead:\n\n"
+            )
             for i, ch in enumerate(retrieved, start=1):
                 answer_text += f"[{i}] {ch.content}\n\n"
 
         return answer_text, retrieved
 
-    # ---------- تحليل CV مقابل Job Description ---------- #
+    # ---------- CV vs JD analysis ---------- #
 
     def analyze_cv_vs_jd(self, cv_path: str, jd_path: str) -> str:
         """
-        تحليل بسيط بين CV و Job Description باستخدام Gemini.
+        Compare a single CV against a Job Description using Gemini.
+        Returns a human-readable analysis in English.
         """
         cv_text = self._load_file_text(cv_path)
         jd_text = self._load_file_text(jd_path)
 
         if not cv_text.strip() or not jd_text.strip():
-            return "تعذر قراءة الـ CV أو الـ Job Description. تأكد من رفع ملفات PDF/TXT سليمة."
+            return (
+                "Could not read the CV or the Job Description. "
+                "Please make sure you uploaded valid PDF or TXT files."
+            )
 
         if self.model is None:
             return (
-                "LLM غير مهيّأ، لا يمكن تنفيذ تحليل CV مقابل JD حالياً. "
-                "ضبط GEMINI_API_KEY أولاً."
+                "LLM is not configured, so CV vs JD analysis cannot be performed. "
+                "Please set GEMINI_API_KEY first."
             )
 
         prompt = textwrap.dedent(
             f"""
-            لديك سيرة ذاتية (CV) ووصف وظيفة (Job Description).
+            You are an expert career coach and technical recruiter.
+
+            You are given a candidate's CV and a Job Description.
 
             CV:
             {cv_text}
@@ -224,20 +243,23 @@ class RAGEngine:
             Job Description:
             {jd_text}
 
-            المطلوب:
-            1) قيّم مدى تطابق الـ CV مع الـ Job Description (Low / Medium / High).
-            2) اذكر أهم 3 نقاط قوة في المرشح بالنسبة لهذه الوظيفة.
-            3) اذكر أهم 3 Skills أو نقاط ناقصة في الـ CV مقارنة بالـ Job Description.
-            4) أعطِ نصائح عملية لتحسين الـ CV ليتوافق أكثر مع الوظيفة.
+            Task:
+            1) Evaluate how well the CV matches the Job Description (use one label: Low / Medium / High).
+            2) List the top 3 strengths of the candidate for this role.
+            3) List the top 3 missing or weak skills in the CV compared to the Job Description.
+            4) Provide concrete, practical suggestions to improve the CV to better fit this role.
 
-            التعليمات:
-            - استخدم لغة عربية واضحة وبسيطة.
-            - استخدم عناوين فرعية ونقاط مرقّمة قدر الإمكان.
+            Guidelines:
+            - Answer in clear English.
+            - Use headings and numbered or bulleted lists where appropriate.
+            - Be specific and actionable, not generic.
             """
         )
 
         try:
             resp = self.model.generate_content(prompt)
-            return resp.text.strip() if resp and resp.text else "تعذر توليد تحليل CV مقابل JD."
+            return resp.text.strip() if resp and resp.text else (
+                "Gemini did not return any content for CV vs JD analysis."
+            )
         except Exception:
-            return "تعذر الاتصال بـ Gemini أثناء تحليل CV مقابل JD."
+            return "Could not reach Gemini while analyzing CV vs JD."
