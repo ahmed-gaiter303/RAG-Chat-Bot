@@ -27,11 +27,17 @@ html, body, [data-testid="stAppViewContainer"] {
     radial-gradient(circle at 100% 100%, rgba(236,72,153,0.35), transparent 55%),
     #020617;
   color: #e5e7eb;
+  margin: 0 !important;
+}
+
+/* Remove extra top padding/strip */
+[data-testid="stAppViewContainer"] > .main {
+  padding-top: 0 !important;
 }
 
 /* Main container */
 .main .block-container {
-  padding-top: 1.2rem;
+  padding-top: 0.6rem;
   padding-bottom: 1.6rem;
   max-width: 1200px;
 }
@@ -69,7 +75,7 @@ section[data-testid="stSidebar"] {
   color: #e5e7eb !important;
 }
 
-/* Main shell */
+/* Main glass card */
 .glass-shell {
   background: radial-gradient(circle at 0 0, rgba(56,189,248,0.18), transparent 55%),
               radial-gradient(circle at 100% 100%, rgba(251,113,133,0.18), transparent 55%),
@@ -137,12 +143,25 @@ h2, h3 {
   box-shadow: 0 14px 32px rgba(15,23,42,0.85);
 }
 
-/* Tabs */
+/* Tabs list spacing */
 [data-baseweb="tab-list"] {
   gap: 0.4rem;
 }
-button[role="tab"] {
-  border-radius: 999px !important;
+
+/* Tabs text + active state */
+[data-baseweb="tab"] {
+  color: #9ca3af !important;
+  font-size: 0.85rem !important;
+}
+
+button[role="tab"][aria-selected="true"] {
+  color: #f9fafb !important;
+  font-weight: 600 !important;
+}
+
+/* Tab underline */
+[data-baseweb="tab-highlight"] {
+  background-color: #f97316 !important;
 }
 
 /* Chat bubbles */
@@ -177,7 +196,7 @@ div[data-testid="stChatInput"] textarea {
 
 div[data-testid="stChatInput"] textarea:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: #4F46E5;
   box-shadow:
     0 0 0 1px rgba(79,70,229,1),
     0 18px 46px rgba(55,65,81,1);
