@@ -396,23 +396,40 @@ with left_col:
         st.info("Please upload and index documents first from the sidebar.")
     else:
         # عرض المحادثة السابقة
-        for msg in st.session_state.chat_history:
-            with st.chat_message(
-                msg["role"],
-                avatar="ＡＩ" if msg["role"] == "assistant" else "ＵＳＲ",
-            ):
-                st.markdown(msg["content"])
+        # عرض المحادثة السابقة
+for msg in st.session_state.chat_history:
+    with st.chat_message(
+        msg["role"],
+        avatar="🤖" if msg["role"] == "assistant" else "🧑",
+    ):
+        st.markdown(msg["content"])
 
-        user_input = st.chat_input("Ask a question about your documents...")
+user_input = st.chat_input("Ask a question about your documents...")
 
-        if user_input:
-            st.session_state.questions_count += 1
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
+if user_input:
+    st.session_state.questions_count += 1
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-            with st.chat_message("user", avatar="ＵＳＲ"):
-                st.markdown(user_input)
+    with st.chat_message("user", avatar="🧑"):
+        st.markdown(user_input)
 
-            with st.chat_message("assistant", avatar="ＡＩ"):
+    with st.chat_message("assistant", avatar="🤖"):
+        with st.spinner("Retrieving relevant chunks and generating answer..."):
+            answer, retrieved = rag.answer(user_input)
+
+        st.markdown(answer)
+
+        if retrieved:
+            st.markdown("")
+            st.markdown("**Sources**")
+            for i, ch in enumerate(retrieved, start=1):
+                st.markdown(
+                    f"<span class='source-badge'>[{i}] {ch.source}</span>",
+                    unsafe_allow_html=True,
+                )
+
+    st.experimental_rerun()
+
                 with st.spinner("Retrieving relevant chunks and generating answer..."):
                     answer, retrieved = rag.answer(user_input)
 
@@ -481,3 +498,4 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
+
