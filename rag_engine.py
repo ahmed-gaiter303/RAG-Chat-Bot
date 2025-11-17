@@ -6,6 +6,7 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
+import google.generativeai as genai
 
 
 class RetrievedChunk:
@@ -20,18 +21,17 @@ class RAGEngine:
         محرك RAG:
         - يقرأ ملفات PDF و TXT.
         - يبني FAISS index على Embeddings من SentenceTransformer.
+        - يستخدم Gemini للإجابة إن وُجد المفتاح.
         """
         # موديل الـ embeddings
         self.embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         self.embedding_dim = embedding_dim
 
-        # ممكن تضيف هنا Gemini لو حابب (أنت already ضايفه)
-        from google.generativeai import GenerativeModel, configure
-
+        # إعداد Gemini
         api_key = os.environ.get("GEMINI_API_KEY")
         if api_key:
-            configure(api_key=api_key)
-            self.model = GenerativeModel("gemini-2.5-flash")
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
         else:
             self.model = None
 
@@ -62,7 +62,7 @@ class RAGEngine:
         elif ext == ".pdf":
             return self._read_pdf(path)
         else:
-            return ""  # أنواع أخرى نتجاهلها حاليًا
+            return ""
 
     # ---------- Embeddings ---------- #
 
@@ -70,7 +70,9 @@ class RAGEngine:
         """
         يحوّل قائمة نصوص إلى مصفوفة Embeddings (n x d).
         """
-        embs = self.embed_model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+        embs = self.embed_model.encode(
+            texts, convert_to_numpy=True, show_progress_bar=False
+        )
         embs = embs.astype("float32")
         return embs
 
@@ -91,19 +93,22 @@ class RAGEngine:
             if not raw_text.strip():
                 continue
 
-            # تقسيم إلى مقاطع ~ 500 حرف (تقريبًا 100–150 كلمة)
-            chunk_size = 500
-            overlap = 100
+            # تنظيف نص
             text = raw_text.replace("\r", "\n")
             text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
 
+            # تقسيم إلى مقاطع مع overlap بسيط
+            chunk_size = 500  # حروف
+            overlap = 100
             start = 0
             while start < len(text):
                 end = start + chunk_size
                 chunk = text[start:end].strip()
                 if chunk:
                     all_chunks.append(
-                        RetrievedChunk(content=chunk, source=os.path.basename(path))
+                        RetrievedChunk(
+                            content=chunk, source=os.path.basename(path)
+                        )
                     )
                 start = end - overlap
 
@@ -139,7 +144,7 @@ class RAGEngine:
 
         return retrieved
 
-    # ---------- توليد الإجابة ---------- #
+    # ---------- توليد الإجابة العامة ---------- #
 
     def answer(self, query: str) -> Tuple[str, List[RetrievedChunk]]:
         retrieved = self._retrieve(query)
@@ -147,7 +152,6 @@ class RAGEngine:
         if not retrieved:
             return "لم أجد أي مقاطع مرتبطة بسؤالك في المستندات.", []
 
-        # لو مفيش Gemini: رجّع المقاطع نفسها
         if self.model is None:
             text = "هنا أهم المقاطع من مستنداتك المتعلقة بسؤالك:\n\n"
             for i, ch in enumerate(retrieved, start=1):
@@ -191,3 +195,49 @@ class RAGEngine:
                 answer_text += f"[{i}] {ch.content}\n\n"
 
         return answer_text, retrieved
+
+    # ---------- تحليل CV مقابل Job Description ---------- #
+
+    def analyze_cv_vs_jd(self, cv_path: str, jd_path: str) -> str:
+        """
+        تحليل بسيط بين CV و Job Description باستخدام Gemini.
+        """
+        cv_text = self._load_file_text(cv_path)
+        jd_text = self._load_file_text(jd_path)
+
+        if not cv_text.strip() or not jd_text.strip():
+            return "تعذر قراءة الـ CV أو الـ Job Description. تأكد من رفع ملفات PDF/TXT سليمة."
+
+        if self.model is None:
+            return (
+                "LLM غير مهيّأ، لا يمكن تنفيذ تحليل CV مقابل JD حالياً. "
+                "ضبط GEMINI_API_KEY أولاً."
+            )
+
+        prompt = textwrap.dedent(
+            f"""
+            لديك سيرة ذاتية (CV) ووصف وظيفة (Job Description).
+
+            CV:
+            {cv_text}
+
+            Job Description:
+            {jd_text}
+
+            المطلوب:
+            1) قيّم مدى تطابق الـ CV مع الـ Job Description (Low / Medium / High).
+            2) اذكر أهم 3 نقاط قوة في المرشح بالنسبة لهذه الوظيفة.
+            3) اذكر أهم 3 Skills أو نقاط ناقصة في الـ CV مقارنة بالـ Job Description.
+            4) أعطِ نصائح عملية لتحسين الـ CV ليتوافق أكثر مع الوظيفة.
+
+            التعليمات:
+            - استخدم لغة عربية واضحة وبسيطة.
+            - استخدم عناوين فرعية ونقاط مرقّمة قدر الإمكان.
+            """
+        )
+
+        try:
+            resp = self.model.generate_content(prompt)
+            return resp.text.strip() if resp and resp.text else "تعذر توليد تحليل CV مقابل JD."
+        except Exception:
+            return "تعذر الاتصال بـ Gemini أثناء تحليل CV مقابل JD."
