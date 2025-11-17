@@ -212,6 +212,7 @@ if "rag" not in st.session_state:
     st.session_state.last_files = []
     st.session_state.chunks_count = 0
     st.session_state.questions_count = 0
+    st.session_state.jd_path = None  # Job Description path
 
 rag: RAGEngine = st.session_state.rag
 
@@ -219,7 +220,7 @@ rag: RAGEngine = st.session_state.rag
 # ---------- Sidebar: upload & controls ----------
 
 with st.sidebar:
-    st.markdown("#### Upload documents")
+    st.markdown("#### Upload CV / documents")
     uploaded_files = st.file_uploader(
         "PDF / TXT",
         type=["pdf", "txt"],
@@ -249,6 +250,18 @@ with st.sidebar:
             file_paths.append(save_path)
 
     st.markdown("---")
+    st.markdown("#### Job Description (optional)")
+    jd_file = st.file_uploader(
+        "JD PDF / TXT", type=["pdf", "txt"], key="jd_uploader"
+    )
+    if jd_file is not None:
+        jd_save_path = os.path.join("uploaded_jd_" + jd_file.name)
+        with open(jd_save_path, "wb") as f:
+            f.write(jd_file.getbuffer())
+        st.session_state.jd_path = jd_save_path
+        st.caption(f"JD loaded: {jd_file.name}")
+
+    st.markdown("---")
 
     if st.button("Index documents", use_container_width=True):
         if not file_paths and not os.path.exists("sample.txt"):
@@ -263,7 +276,9 @@ with st.sidebar:
                     st.session_state.index_built = True
                     st.session_state.last_files = file_paths
                     st.session_state.chunks_count = num_chunks
-                    st.success(f"Indexed {num_files} files into {num_chunks} text chunks.")
+                    st.success(
+                        f"Indexed {num_files} files into {num_chunks} text chunks."
+                    )
                 except Exception as e:
                     st.session_state.index_built = False
                     st.error(f"Error while indexing: {e}")
@@ -305,7 +320,7 @@ st.markdown(
   <div>
     <h1 style="margin:0;">RAG Chat Bot</h1>
     <p style="margin:0.25rem 0 0; font-size:0.93rem; max-width:520px;">
-      Chat interface for your PDFs and text documents. Upload, index, and query your knowledge base with a clean, product-ready dashboard UI.
+      Chat interface for your CVs and documents. Upload, index, and query your knowledge base with a clean, product-ready dashboard UI.
     </p>
   </div>
   <div class="ribbon-bar">
@@ -382,6 +397,26 @@ with stats_col3:
     )
 
 
+# ---------- Quick Actions (CV / Docs) ----------
+
+quick_question = None
+
+if st.session_state.index_built and st.session_state.last_files:
+    qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
+    with qa_col1:
+        if st.button("CV Summary", use_container_width=True):
+            quick_question = "Summarize this CV in 4 concise bullet points."
+    with qa_col2:
+        if st.button("Technical skills", use_container_width=True):
+            quick_question = "List the main technical skills mentioned in this CV or document."
+    with qa_col3:
+        if st.button("Certifications", use_container_width=True):
+            quick_question = "What certifications and courses are mentioned?"
+    with qa_col4:
+        if st.button("Experience overview", use_container_width=True):
+            quick_question = "Summarize the professional experience section in this CV."
+
+
 # ---------- Layout: chat + right panel ----------
 
 left_col, right_col = st.columns([2.2, 1], gap="large")
@@ -395,6 +430,7 @@ with left_col:
     if not st.session_state.index_built:
         st.info("Please upload and index documents first from the sidebar.")
     else:
+        # عرض المحادثة السابقة
         for msg in st.session_state.chat_history:
             with st.chat_message(
                 msg["role"],
@@ -402,17 +438,24 @@ with left_col:
             ):
                 st.markdown(msg["content"])
 
-        user_input = st.chat_input("Ask a question about your documents...")
+        # إما سؤال من Quick Action أو من المستخدم
+        user_input = quick_question or st.chat_input(
+            "Ask a question about your documents..."
+        )
 
         if user_input:
             st.session_state.questions_count += 1
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            st.session_state.chat_history.append(
+                {"role": "user", "content": user_input}
+            )
 
             with st.chat_message("user", avatar="🧑"):
                 st.markdown(user_input)
 
             with st.chat_message("assistant", avatar="🤖"):
-                with st.spinner("Retrieving relevant chunks and generating answer..."):
+                with st.spinner(
+                    "Retrieving relevant chunks and generating answer..."
+                ):
                     answer, retrieved = rag.answer(user_input)
 
                 st.markdown(answer)
@@ -427,7 +470,7 @@ with left_col:
                         )
 
 
-# ---------- Right column: session info + explorer ----------
+# ---------- Right column: session info + explorer + analysis ----------
 
 with right_col:
     st.subheader("SESSION · STATUS")
@@ -450,27 +493,77 @@ with right_col:
     else:
         st.markdown("_No documents indexed yet._")
 
+    if st.session_state.jd_path:
+        st.markdown(f"- JD: {os.path.basename(st.session_state.jd_path)}")
+
+    st.markdown("---")
+    st.subheader("CV · JD ANALYSIS")
+
+    cv_available = (
+        st.session_state.last_files
+        and len(st.session_state.last_files) == 1
+        and st.session_state.index_built
+    )
+    jd_available = st.session_state.jd_path is not None
+
+    if st.button(
+        "Analyze CV vs JD",
+        use_container_width=True,
+        disabled=not (cv_available and jd_available),
+    ):
+        cv_path = st.session_state.last_files[0]
+        with st.spinner("Analyzing CV against Job Description..."):
+            analysis_text = rag.analyze_cv_vs_jd(cv_path, st.session_state.jd_path)
+        st.markdown(analysis_text)
+
+    if not (cv_available and jd_available):
+        st.caption(
+            "Upload a single CV and one Job Description to enable CV vs JD analysis."
+        )
+
     st.markdown("---")
     st.subheader("FLOW · PIPELINE")
     st.markdown(
         """
 <ul class="custom-list">
 <li>Upload one or more PDF/TXT files from the sidebar.</li>
+<li>Optionally upload a Job Description for CV matching.</li>
 <li>Click <b>Index documents</b> to build the vector index with embeddings.</li>
-<li>Ask questions in the chat console on the left.</li>
-<li>The engine retrieves the most relevant chunks and (optionally) calls Gemini to answer.</li>
+<li>Use quick actions or ask questions in the chat console on the left.</li>
+<li>The engine retrieves the most relevant chunks and calls Gemini to answer.</li>
 </ul>
 """,
         unsafe_allow_html=True,
     )
 
     st.markdown("---")
+    st.subheader("EXPORT · REPORT")
+
+    if st.session_state.chat_history:
+        report_lines = []
+        for msg in st.session_state.chat_history:
+            prefix = "User" if msg["role"] == "user" else "Assistant"
+            report_lines.append(f"{prefix}: {msg['content']}")
+            report_lines.append("")
+        report_text = "\n".join(report_lines)
+
+        st.download_button(
+            "Download chat report",
+            data=report_text,
+            file_name="chat_report.txt",
+            mime="text/plain",
+            use_container_width=True,
+        )
+    else:
+        st.caption("Start a chat to enable report export.")
+
+    st.markdown("---")
     st.subheader("USAGE · NOTES")
     st.markdown(
         """
 <ul class="custom-list">
-<li>Use clear questions like <i>“Summarize chapter 2”</i> أو <i>“What are the key points about feature X?”</i>.</li>
-<li>Upload multiple files لبناء base معرفة أعمق.</li>
+<li>Use clear questions like <i>“Summarize this CV”</i> أو <i>“What are the key technical skills?”</i>.</li>
+<li>Upload a Job Description للحصول على تحليل تطابق CV مع الوظيفة.</li>
 <li>في الإنتاج، يمكن توصيل هذه الواجهة بوثائق الشركة أو وثائق العملاء كـ branded assistant.</li>
 </ul>
 """,
