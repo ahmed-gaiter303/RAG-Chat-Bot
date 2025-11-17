@@ -406,7 +406,7 @@ with left_col:
         # إدخال سؤال جديد
         user_input = st.chat_input("Ask a question about your documents...")
 
-                if user_input:
+        if user_input:
             st.session_state.questions_count += 1
             st.session_state.chat_history.append({"role": "user", "content": user_input})
 
@@ -421,13 +421,12 @@ with left_col:
 
                 if retrieved:
                     st.markdown("")
-                    st.markmarkdown("**Sources**")
+                    st.markdown("**Sources**")
                     for i, ch in enumerate(retrieved, start=1):
                         st.markdown(
                             f"<span class='source-badge'>[{i}] {ch.source}</span>",
                             unsafe_allow_html=True,
                         )
-
 
 
 # ---------- Right column: session info + explorer ----------
@@ -481,4 +480,3 @@ with right_col:
     )
 
 st.markdown("</div>", unsafe_allow_html=True)
-
