@@ -275,10 +275,10 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("#### LLM status")
-    if rag.llm_client is None:
-        st.caption("OPENAI_API_KEY not set → bot returns the most relevant snippets only.")
+    if getattr(rag, "model", None) is None:
+        st.caption("LLM not configured → bot returns the most relevant snippets only.")
     else:
-        st.caption("OpenAI configured → bot generates natural answers grounded in your docs.")
+        st.caption("Gemini configured → bot generates natural answers grounded in your docs.")
 
 
 # ---------- Header ----------
@@ -460,7 +460,7 @@ with right_col:
 <li>Upload one or more PDF/TXT files from the sidebar.</li>
 <li>Click <b>Index documents</b> to build the vector index with embeddings.</li>
 <li>Ask questions in the chat console on the left.</li>
-<li>The engine retrieves the most relevant chunks and (optionally) calls OpenAI to answer.</li>
+<li>The engine retrieves the most relevant chunks and (optionally) calls Gemini to answer.</li>
 </ul>
 """,
         unsafe_allow_html=True,
