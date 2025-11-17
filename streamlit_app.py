@@ -6,32 +6,29 @@ import streamlit as st
 from rag_engine import RAGEngine
 
 
-# ---------- Page config & custom CSS ----------
+# ---------- Theme CSS (light + dark) ----------
 
-st.set_page_config(page_title="RAG Chat Bot · Ahmed Gaiter", layout="wide")
-
-GLASS_CSS = """
+LIGHT_CSS = """
 <style>
 
-/* نجبر الخلفية تبقى فاتحة حتى لو المستخدم فعّل دارك مود */
 html, body, [data-testid="stAppViewContainer"] {
   background:
-    linear-gradient(135deg, rgba(79,70,229,0.14), transparent 55%),
-    linear-gradient(315deg, rgba(236,72,153,0.12), transparent 55%),
-    #F9FAFB !important;
-  color: #111827 !important;
+    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.16), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(244,114,182,0.14), transparent 55%),
+    #F9FAFB;
+  color: #111827;
 }
 
-/* container أضيق شوية كأنه dashboard */
+/* container */
 .main .block-container {
   padding-top: 1.4rem;
   padding-bottom: 1.5rem;
   max-width: 1120px;
 }
 
-/* سايدبار أبيض مسطّح بحافة واضحة */
+/* Sidebar */
 [data-testid="stSidebar"] {
-  background: transparent !important;
+  background: transparent;
 }
 
 section[data-testid="stSidebar"] > div {
@@ -43,7 +40,7 @@ section[data-testid="stSidebar"] > div {
   box-shadow: 0 10px 30px rgba(15,23,42,0.08);
 }
 
-/* كارت رئيسي للشات شكل Dashboard card */
+/* Main card */
 .glass-shell {
   background: #FFFFFF;
   border-radius: 20px;
@@ -54,7 +51,7 @@ section[data-testid="stSidebar"] > div {
     0 0 0 1px rgba(148,163,184,0.35);
 }
 
-/* شريط علوي داخل الكارت كأنه Product header + Pipeline ribbon */
+/* Ribbon */
 .ribbon-bar {
   background: linear-gradient(90deg, #4f46e5, #ec4899);
   border-radius: 999px;
@@ -74,7 +71,7 @@ section[data-testid="stSidebar"] > div {
   border: 1px solid rgba(248,250,252,0.35);
 }
 
-/* نصوص */
+/* Text */
 h1 {
   font-size: 2.2rem;
   letter-spacing: 0.04em;
@@ -85,7 +82,7 @@ h2, h3 {
   color: #111827;
 }
 
-/* فقاعات الشات: user = card داكن، assistant = card فاتح */
+/* Chat bubbles */
 div[data-testid="stChatMessage"][data-testid*="user"] {
   background: #111827;
   color: #F9FAFB;
@@ -100,9 +97,9 @@ div[data-testid="stChatMessage"][data-testid*="assistant"] {
   border: 1px solid rgba(209,213,219,0.9);
 }
 
-/* صندوق إدخال الشات */
+/* Chat input */
 .stChatInputContainer {
-  background: transparent !important;
+  background: transparent;
   padding-top: 0.6rem;
 }
 
@@ -116,20 +113,15 @@ div[data-testid="stChatInput"] textarea {
 }
 
 div[data-testid="stChatInput"] textarea:focus {
-  outline: none !important;
+  outline: none;
   border-color: #4F46E5;
   box-shadow: 0 0 0 1px rgba(79,70,229,0.85), 0 16px 36px rgba(79,70,229,0.25);
 }
 
-/* زر إرسال الأيقونة */
-button[kind="primary"] svg {
-  color: #F9FAFB !important;
-}
-
-/* أزرار السايدبار (العادية + الـ disabled) */
+/* Sidebar buttons (light) */
 section[data-testid="stSidebar"] button {
-  color: #F9FAFB !important;               /* نص أبيض واضح */
-  background-color: #111827 !important;    /* خلفية داكنة ثابتة */
+  color: #F9FAFB;
+  background-color: #111827;
   border-radius: 10px;
   border: 0;
   padding: 0.45rem 0.2rem;
@@ -138,7 +130,6 @@ section[data-testid="stSidebar"] button {
   transition: all 0.12s ease-out;
 }
 
-/* Hover */
 section[data-testid="stSidebar"] button:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 26px rgba(15,23,42,0.65);
@@ -146,13 +137,13 @@ section[data-testid="stSidebar"] button:not(:disabled):hover {
 
 /* Disabled state */
 section[data-testid="stSidebar"] button:disabled {
-  background-color: #1F2933 !important;
-  color: #9CA3AF !important;
-  border: 1px solid #4B5563 !important;
-  box-shadow: none !important;
+  background-color: #1F2933;
+  color: #9CA3AF;
+  border: 1px solid #4B5563;
+  box-shadow: none;
 }
 
-/* Badges للمصادر */
+/* Source badges */
 .source-badge {
     display: inline-block;
     padding: 0.15rem 0.55rem;
@@ -164,7 +155,7 @@ section[data-testid="stSidebar"] button:disabled {
     margin-top: 0.18rem;
 }
 
-/* قوائم How it works / Tips */
+/* Lists */
 ul.custom-list {
   padding-left: 1.1rem;
   color: #374151;
@@ -174,18 +165,203 @@ ul.custom-list li {
   margin-bottom: 0.22rem;
 }
 
-/* تحسين شكل رسائل info */
+/* Info alert */
 div.stAlert {
-  background-color: #E5ECFF !important;
-  color: #111827 !important;
-  border-radius: 12px !important;
-  border: 1px solid #C7D2FE !important;
+  background-color: #E5ECFF;
+  color: #111827;
+  border-radius: 12px;
+  border: 1px solid #C7D2FE;
 }
 
 </style>
 """
 
-st.markdown(GLASS_CSS, unsafe_allow_html=True)
+DARK_CSS = """
+<style>
+
+html, body, [data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(129,140,248,0.25), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(236,72,153,0.22), transparent 55%),
+    #020617;
+  color: #E5E7EB;
+}
+
+.main .block-container {
+  padding-top: 1.4rem;
+  padding-bottom: 1.5rem;
+  max-width: 1120px;
+}
+
+/* Sidebar (dark) */
+[data-testid="stSidebar"] {
+  background: transparent;
+}
+
+section[data-testid="stSidebar"] > div {
+  background: #020617;
+  border-radius: 16px;
+  margin: 0.9rem 0.4rem 0.9rem 0.2rem;
+  padding: 1rem 0.9rem 1.1rem 0.9rem;
+  border: 1px solid rgba(51,65,85,0.9);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.7);
+}
+
+/* Main card (dark glass) */
+.glass-shell {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(79,70,229,0.35), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(236,72,153,0.30), transparent 55%),
+    #020617EE;
+  border-radius: 20px;
+  padding: 1.3rem 1.5rem 1.5rem 1.5rem;
+  border: 1px solid rgba(55,65,81,0.95);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.9);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* Ribbon */
+.ribbon-bar {
+  background: linear-gradient(90deg, #6366f1, #ec4899);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  color: #F9FAFB;
+  font-size: 0.80rem;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.8);
+}
+
+.ribbon-chip {
+  background: rgba(15,23,42,0.5);
+  padding: 0.13rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(248,250,252,0.25);
+}
+
+/* Text */
+h1 {
+  font-size: 2.2rem;
+  letter-spacing: 0.04em;
+  color: #F9FAFB;
+}
+
+h2, h3 {
+  color: #E5E7EB;
+}
+
+/* Chat bubbles */
+div[data-testid="stChatMessage"][data-testid*="user"] {
+  background: #F9FAFB;
+  color: #020617;
+  border-radius: 14px;
+  border: none;
+}
+
+div[data-testid="stChatMessage"][data-testid*="assistant"] {
+  background: #020617;
+  color: #E5E7EB;
+  border-radius: 14px;
+  border: 1px solid rgba(75,85,99,0.95);
+}
+
+/* Chat input */
+.stChatInputContainer {
+  background: transparent;
+  padding-top: 0.6rem;
+}
+
+div[data-testid="stChatInput"] textarea {
+  background: #020617;
+  border-radius: 12px;
+  border: 1px solid rgba(55,65,81,0.95);
+  padding: 0.75rem 0.9rem;
+  color: #E5E7EB;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.9);
+}
+
+div[data-testid="stChatInput"] textarea:focus {
+  outline: none;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 1px rgba(129,140,248,0.95), 0 20px 48px rgba(0,0,0,1);
+}
+
+/* Sidebar buttons (dark) */
+section[data-testid="stSidebar"] button {
+  color: #F9FAFB;
+  background-color: #111827;
+  border-radius: 10px;
+  border: 0;
+  padding: 0.45rem 0.2rem;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.9);
+  transition: all 0.12s ease-out;
+}
+
+section[data-testid="stSidebar"] button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 38px rgba(0,0,0,1);
+}
+
+/* Disabled */
+section[data-testid="stSidebar"] button:disabled {
+  background-color: #111827;
+  color: #9CA3AF;
+  border: 1px solid #4B5563;
+  box-shadow: none;
+}
+
+/* Source badges */
+.source-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    background: #F9FAFB;
+    color: #020617;
+    font-size: 0.68rem;
+    margin-right: 0.25rem;
+    margin-top: 0.18rem;
+}
+
+/* Lists */
+ul.custom-list {
+  padding-left: 1.1rem;
+  color: #D1D5DB;
+}
+
+ul.custom-list li {
+  margin-bottom: 0.22rem;
+}
+
+/* Info alert */
+div.stAlert {
+  background-color: #020617;
+  color: #E5E7EB;
+  border-radius: 12px;
+  border: 1px solid #4B5563;
+}
+
+</style>
+"""
+
+
+# ---------- Theme toggle in sidebar ----------
+
+if "ui_theme" not in st.session_state:
+    st.session_state.ui_theme = "light"
+
+with st.sidebar:
+    st.write("### Appearance")
+    dark_mode = st.toggle("Dark mode", value=(st.session_state.ui_theme == "dark"))
+
+st.session_state.ui_theme = "dark" if dark_mode else "light"
+
+if st.session_state.ui_theme == "dark":
+    st.markdown(DARK_CSS, unsafe_allow_html=True)
+else:
+    st.markdown(LIGHT_CSS, unsafe_allow_html=True)
 
 
 # ---------- Header / Hero ----------
@@ -285,7 +461,7 @@ st.markdown(
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
   <div>
     <h1 style="margin:0;">RAG Chat Bot</h1>
-    <p style="margin:0.25rem 0 0; font-size:0.93rem; color:#4B5563; max-width:520px;">
+    <p style="margin:0.25rem 0 0; font-size:0.93rem; max-width:520px;">
       Chat interface for your PDFs and text documents. Upload, index, and query your knowledge base with a clean, product-ready dashboard UI.
     </p>
   </div>
